@@ -110,9 +110,9 @@ rll.Grid.prototype.draw = function(context) {
   var h = rll.Grid._size.height();
   var x = this._point.x() * w;
   var y = this._point.y() * h;
-  context.fillStyle = rll.Grid._backGroundColor;
   var cc = new rll.CharacterCode(this._character.code());
   if (cc.isWide()) w *= 2;
+  context.fillStyle = rll.Grid._backGroundColor;
   context.fillRect(x, y, w, h);
   context.fillStyle = this._character.color();
   context.fillText(this._character.glyph(), x, y);
@@ -171,8 +171,8 @@ rll.Display.prototype.write = function(point, string, color) {
 
 rll.Display.prototype._clearCache = function(point) {
   var key = point.toString();
-  if (key in this._dirty === false) return;
-  delete this._dirty[key];
+  if (key in this._dirty) delete this._dirty[key];
+  if (key in this._grids) delete this._grids[key];
 };
 
 rll.Display.prototype._write = function(point, glyph, color) {
@@ -204,6 +204,12 @@ rll.Display.prototype.clear = function() {
   this._context.fillRect(0, 0, w, h);
   this._grids = [];
   this._dirty = [];
+};
+
+rll.Display.prototype.clearLine = function(y) {
+  for(var x = 0, len = this._size.width(); x < len; x++) {
+    this.write(new rll.Point(x, y), ' ');
+  }
 };
 
 rll.Actor = function(point) {
@@ -252,6 +258,8 @@ var App = {
       this._player.move(new rll.Point( 0, 1));
     } else if (key == 'r') {
       this._display.clear();
+    } else if (key == 'c') {
+      this._display.clearLine(0);
     } else {
       return;
     }
