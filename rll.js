@@ -116,6 +116,8 @@ rll.Display.prototype.initialize = function() {
   this._setupFont();
   this._computeCanvasSize();
   this.clear();
+  this.flush = this.flush.bind(this);
+  this.flush();
 };
 
 rll.Display.prototype._setupFont = function() {
@@ -157,6 +159,8 @@ rll.Display.prototype._write = function(point, glyph, color) {
 };
 
 rll.Display.prototype.flush = function() {
+  window.requestAnimationFrame(this.flush);
+  if (Object.keys(this._dirty).length === 0) return;
   for (var key in this._dirty) {
     if (key in this._grids && this._grids[key].equal(this._dirty[key])) {
       continue;
@@ -195,7 +199,6 @@ var App = {
     document.body.appendChild(this._display.getCanvas());
     window.addEventListener('keydown', this);
     this.drawMap();
-    this._display.flush();
   },
 
   drawMap: function() {
@@ -222,7 +225,6 @@ var App = {
       return;
     }
     this.drawMap();
-    this._display.flush();
   },
 };
 
