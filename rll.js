@@ -57,22 +57,36 @@ rll.Size.prototype.multiply = function(other) {
   return new rll.Size(w, h);
 };
 
-var Character = function(glyph, color) {
+rll.Character = function(glyph, color) {
   this._glyph = glyph;
   this._color = color;
 };
 
-Character.prototype.glyph = function() {
+rll.Character.prototype.glyph = function() {
   return this._glyph;
 };
 
-Character.prototype.color = function() {
+rll.Character.prototype.color = function() {
   return this._color;
 };
 
-Character.prototype.equal = function(other) {
+rll.Character.prototype.equal = function(other) {
   return (this._glyph == other._glyph &&
           this._color == other._color);
+};
+
+rll.Character.prototype.code = function() {
+  return this._glyph.charCodeAt(0);
+};
+
+rll.CharacterCode = function(code) {
+  this._code = code;
+};
+
+rll.CharacterCode.prototype.isWide = function() {
+  return (this._code > 0xff   && this._code < 0xff61) ||
+         (this._code > 0xffdc && this._code < 0xffe8) &&
+          this._code > 0xffee;
 };
 
 rll.Grid = function(point, ch) {
@@ -97,6 +111,8 @@ rll.Grid.prototype.draw = function(context) {
   var x = this._point.x() * w;
   var y = this._point.y() * h;
   context.fillStyle = rll.Grid._backGroundColor;
+  var cc = new rll.CharacterCode(this._character.code());
+  if (cc.isWide()) w *= 2;
   context.fillRect(x, y, w, h);
   context.fillStyle = this._character.color();
   context.fillText(this._character.glyph(), x, y);
@@ -141,17 +157,27 @@ rll.Display.prototype.getCanvas = function() {
 };
 
 rll.Display.prototype.write = function(point, string, color) {
-  var write_color = color || '#ccc';
-  // TODO 2byte文字対応
+  var write_color = color || '#ccc',
+      cc;
   for (var i=0; i < string.length; i++) {
     this._write(point, string[i], write_color);
+    point = point.add(rll.Point.RIGHT);
+    cc = new rll.CharacterCode(string.charCodeAt(i));
+    if (cc.isWide() === false) continue;
+    this._clearCache(point);
     point = point.add(rll.Point.RIGHT);
   }
 };
 
+rll.Display.prototype._clearCache = function(point) {
+  var key = point.toString();
+  if (key in this._dirty === false) return;
+  delete this._dirty[key];
+};
+
 rll.Display.prototype._write = function(point, glyph, color) {
   var key = point.toString();
-  var grid = new rll.Grid(point, new Character(glyph, color));
+  var grid = new rll.Grid(point, new rll.Character(glyph, color));
   if (key in this._dirty && this._dirty[key].equal(grid)) {
     return;
   }
@@ -176,6 +202,8 @@ rll.Display.prototype.clear = function() {
   var h = this._context.canvas.height;
   this._context.fillStyle = rll.Grid._backGroundColor;
   this._context.fillRect(0, 0, w, h);
+  this._grids = [];
+  this._dirty = [];
 };
 
 rll.Actor = function(point) {
@@ -208,6 +236,7 @@ var App = {
       }
     }
     this._display.write(new rll.Point(0, 0), 'hello 世界', '#0c0');
+    this._display.write(new rll.Point(2, 3), 'こんにちわ world', '#cc0');
     this._player.draw(this._display);
   },
 
@@ -221,6 +250,8 @@ var App = {
       this._player.move(new rll.Point( 0,-1));
     } else if (key == 'j') {
       this._player.move(new rll.Point( 0, 1));
+    } else if (key == 'r') {
+      this._display.clear();
     } else {
       return;
     }
