@@ -1,5 +1,9 @@
 var rll = rll || {};
 
+rll.random = function(min, max) {
+  return min + Math.floor(Math.random() * (max - min));
+};
+
 rll.Point = function(x, y) {
   this._x = x;
   this._y = y;
@@ -195,6 +199,7 @@ rll.Display.prototype.flush = function() {
   window.requestAnimationFrame(this.flush);
   if (Object.keys(this._dirty).length === 0) return;
   for (var key in this._dirty) {
+    if (key.indexOf('random') >= 0) continue; // TODO for rot.js
     if (key in this._grids && this._grids[key].equal(this._dirty[key])) {
       continue;
     }
@@ -235,7 +240,6 @@ rll.Actor.prototype.movedPoint = function(direction) {
   return this._point.add(direction);
 };
 
-
 rll.Terrain = function(property) {
   this._character = new rll.Character(property.character, property.color);
   this._walkable = property.walkable;
@@ -266,7 +270,7 @@ rll.TerrainMap = function() {
   for (var y=0, h=rll.TerrainMap._size.height(); y<h; y++) {
     this._terrain[y] = [];
     for (var x=0, w=rll.TerrainMap._size.width(); x<w; x++) {
-      this._terrain[y][x] = rll.Terrain.FLOOR;
+      this._terrain[y][x] = rll.Terrain.WALL;
     }
   }
 };
@@ -274,15 +278,24 @@ rll.TerrainMap = function() {
 rll.TerrainMap._size = new rll.Size(80, 21);
 
 rll.TerrainMap.prototype.draw = function(point, display) {
-  this._terrain[point.x()][point.y()].draw(point, display);
+  this._terrain[point.y()][point.x()].draw(point, display);
 };
 
 rll.TerrainMap.prototype.set = function(new_terrain, point) {
-  this._terrain[point.x()][point.y()] = new_terrain;
+  this._terrain[point.y()][point.x()] = new_terrain;
 };
 
 rll.TerrainMap.prototype.walkableAt = function(point) {
-  return this._terrain[point.x()][point.y()].walkable();
+  return this._terrain[point.y()][point.x()].walkable();
+};
+
+rll.TerrainMap.prototype.randomWalkablePoint = function() {
+  h = rll.TerrainMap._size.height();
+  w = rll.TerrainMap._size.width();
+  while(true) {
+    p = new rll.Point(rll.random(0, w), rll.random(0, h));
+    if (this.walkableAt(p)) return p;
+  }
 };
 
 var App = {
@@ -300,18 +313,23 @@ var App = {
     this._display.initialize();
     document.body.appendChild(this._display.getCanvas());
     window.addEventListener('keydown', this);
-    this._map.set(rll.Terrain.WALL, new rll.Point(5, 6));
+    var digger = new ROT.Map.Digger(79, 20);
+    var callBack = function(x, y, value) {
+      if (value) { return; }
+      this._map.set(rll.Terrain.FLOOR, new rll.Point(x, y));
+    };
+    digger.create(callBack.bind(this));
+    this._player = new rll.Actor(this._map.randomWalkablePoint());
     this.drawMap();
   },
 
   drawMap: function() {
-    for (var x=0; x<10; x++) {
-      for (var y=0; y<10; y++) {
+    for (var y=0; y<21; y++) {
+      for (var x=0; x<80; x++) {
         this._map.draw(new rll.Point(x, y), this._display);
       }
     }
     this._display.write(new rll.Point(0, 0), 'hello 世界', '#0c0');
-    this._display.write(new rll.Point(2, 3), 'こんにちわ world', '#cc0');
     this._player.draw(this._display);
   },
 
