@@ -1,3 +1,4 @@
+// TODO monster作成
 var rll = rll || {};
 
 rll.random = function(min, max) {
@@ -199,7 +200,6 @@ rll.Display.prototype.flush = function() {
   window.requestAnimationFrame(this.flush);
   if (Object.keys(this._dirty).length === 0) return;
   for (var key in this._dirty) {
-    if (key.indexOf('random') >= 0) continue; // TODO for rot.js
     if (key in this._grids && this._grids[key].equal(this._dirty[key])) {
       continue;
     }
@@ -214,8 +214,8 @@ rll.Display.prototype.clear = function() {
   var h = this._context.canvas.height;
   this._context.fillStyle = rll.Grid._backGroundColor;
   this._context.fillRect(0, 0, w, h);
-  this._grids = [];
-  this._dirty = [];
+  this._grids = {};
+  this._dirty = {};
 };
 
 rll.Display.prototype.clearLine = function(y) {
