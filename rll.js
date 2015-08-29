@@ -1,9 +1,43 @@
 // TODO monster作成
 var rll = rll || {};
 
+var inherit = function(child, parent) {
+  var F = function(){};
+  F.prototype = parent.prototype;
+  child.prototype = new F();
+  child.prototype.constructer = child;
+};
+
 rll.random = function(min, max) {
   return min + Math.floor(Math.random() * (max - min));
 };
+
+rll.List = function() {
+  Array.apply(this);
+  for(var i = 0; i<arguments.length; i++) {
+    this.push(arguments[i]);
+  }
+};
+inherit(rll.List, Array);
+
+rll.List.prototype.choice = function() {
+  var index = rll.random(0, this.length);
+  return this[index];
+};
+
+rll.List.prototype.reduce = function(f) {
+  for (var i=0; i<this.length; i++) {
+    f(this[i]);
+  }
+};
+
+rll.List.prototype.find = function(f) {
+  for (var i=0; i<this.length; i++) {
+    if (f(this[i])) return this[i];
+  }
+  return null;
+};
+
 
 rll.Point = function(x, y) {
   this._x = x;
@@ -18,6 +52,11 @@ rll.Point.prototype.y = function() {
   return this._y;
 };
 
+rll.Point.prototype.equal = function(other) {
+  return (this.x() === other.x() &&
+          this.y() === other.y());
+};
+
 rll.Point.prototype.add = function(other) {
   var x = this.x() + other.x();
   var y = this.y() + other.y();
@@ -28,10 +67,25 @@ rll.Point.prototype.toString = function() {
   return this.x() + ':' + this.y();
 };
 
-rll.Point.UP    = new rll.Point( 0, -1);
-rll.Point.DOWN  = new rll.Point( 0,  1);
-rll.Point.LEFT  = new rll.Point(-1,  0);
-rll.Point.RIGHT = new rll.Point( 1,  0);
+rll.Direction = {};
+rll.Direction.UP    = new rll.Point( 0, -1);
+rll.Direction.DOWN  = new rll.Point( 0,  1);
+rll.Direction.LEFT  = new rll.Point(-1,  0);
+rll.Direction.RIGHT = new rll.Point( 1,  0);
+
+rll.Direction.N = rll.Direction.UP;
+rll.Direction.E = rll.Direction.RIGHT;
+rll.Direction.S = rll.Direction.DOWN;
+rll.Direction.W = rll.Direction.LEFT;
+rll.Direction.NE = rll.Direction.N.add(rll.Direction.E);
+rll.Direction.SE = rll.Direction.S.add(rll.Direction.E);
+rll.Direction.SW = rll.Direction.S.add(rll.Direction.W);
+rll.Direction.NW = rll.Direction.N.add(rll.Direction.W);
+
+rll.Direction.AROUND = new rll.List(
+  rll.Direction.N, rll.Direction.E, rll.Direction.S,
+  rll.Direction.W, rll.Direction.NE, rll.Direction.SE,
+  rll.Direction.SW, rll.Direction.NW);
 
 rll.Font = function(family, size) {
   this._fontFamily = family;
@@ -171,13 +225,13 @@ rll.Display.prototype.getCanvas = function() {
 
 rll.Display.prototype.write = function(point, string, color) {
   var write_color = color || '#ccc', cc;
-  for (var i=0; i < string.length; i++) {
+  for (var i=0; i<string.length; i++) {
     this._write(point, string[i], write_color);
-    point = point.add(rll.Point.RIGHT);
+    point = point.add(rll.Direction.RIGHT);
     cc = new rll.CharacterCode(string.charCodeAt(i));
     if (cc.isWide() === false) continue;
     this._clearCache(point);
-    point = point.add(rll.Point.RIGHT);
+    point = point.add(rll.Direction.RIGHT);
   }
 };
 
@@ -224,12 +278,15 @@ rll.Display.prototype.clearLine = function(y) {
   }
 };
 
-rll.Actor = function(point) {
-  this._point = point;
+rll.Actor = function(character) {
+  this._point = new rll.Point(0, 0);
+  this._character = character;
 };
 
 rll.Actor.prototype.draw = function(display) {
-  display.write(this._point, '@', '#088');
+  display.write(this._point,
+      this._character.glyph(),
+      this._character.color());
 };
 
 rll.Actor.prototype.move = function(direction) {
@@ -238,6 +295,14 @@ rll.Actor.prototype.move = function(direction) {
 
 rll.Actor.prototype.movedPoint = function(direction) {
   return this._point.add(direction);
+};
+
+rll.Actor.prototype.setPoint = function(point) {
+  this._point = point;
+};
+
+rll.Actor.prototype.on = function(point) {
+  return this._point.equal(point);
 };
 
 rll.Terrain = function(property) {
@@ -300,13 +365,14 @@ rll.TerrainMap.prototype.randomWalkablePoint = function() {
 
 var App = {
   _display: new rll.Display(),
-  _player: new rll.Actor(new rll.Point(1, 2)),
+  _player: new rll.Actor(new rll.Character('@', '#088')),
+  _actors: new rll.List(),
   _map: new rll.TerrainMap(),
   _dirKey: {
-    'h': rll.Point.LEFT,
-    'l': rll.Point.RIGHT,
-    'k': rll.Point.UP,
-    'j': rll.Point.DOWN
+    'h': rll.Direction.W, 'l': rll.Direction.E,
+    'k': rll.Direction.N, 'j': rll.Direction.S,
+    'y': rll.Direction.NW, 'u': rll.Direction.NE,
+    'b': rll.Direction.SW, 'n': rll.Direction.SE
   },
 
   run: function() {
@@ -319,7 +385,13 @@ var App = {
       this._map.set(rll.Terrain.FLOOR, new rll.Point(x, y));
     };
     digger.create(callBack.bind(this));
-    this._player = new rll.Actor(this._map.randomWalkablePoint());
+    // TODO
+    this._player.setPoint(this._map.randomWalkablePoint());
+    for (var i=0; i<8; i++) {
+      var monster = new rll.Actor(new rll.Character('o', '#0f0'));
+      monster.setPoint(this._map.randomWalkablePoint());
+      this._actors.push(monster);
+    }
     this.drawMap();
   },
 
@@ -331,12 +403,17 @@ var App = {
     }
     this._display.write(new rll.Point(0, 0), 'hello 世界', '#0c0');
     this._player.draw(this._display);
+    this._actors.reduce(function(actor){
+      actor.draw(this._display);
+    }.bind(this));
   },
 
   handleEvent: function(e) {
     var key = String.fromCharCode(e.keyCode).toLowerCase();
     if (key in this._dirKey) {
-      this.movePlayer(this._dirKey[key]);
+      if (this.moveActor(this._player, this._dirKey[key])) {
+        this.moveActors();
+      }
     } else {
       switch (key) {
       case 'r':
@@ -352,11 +429,25 @@ var App = {
     this.drawMap();
   },
 
-  movePlayer: function(direction) {
-    to = this._player.movedPoint(direction);
-    if (this._map.walkableAt(to)) {
-      this._player.move(direction);
-    }
+  findActor: function(point) {
+    return this._actors.find(function(actor){
+      return actor.on(point);
+    }.bind(this));
+  },
+
+  moveActors: function() {
+    this._actors.reduce(function(actor){
+      this.moveActor(actor, rll.Direction.AROUND.choice());
+    }.bind(this));
+  },
+
+  moveActor: function(actor, direction) {
+    to = actor.movedPoint(direction);
+    if (this._player.on(to)) return false;
+    if (this._map.walkableAt(to) === false) return false;
+    if (this.findActor(to)) return false;
+    actor.move(direction);
+    return true;
   },
 };
 
