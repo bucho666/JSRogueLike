@@ -25,19 +25,12 @@ rll.List.prototype.choice = function() {
   return this[index];
 };
 
-rll.List.prototype.reduce = function(f) {
-  for (var i=0; i<this.length; i++) {
-    f(this[i]);
-  }
-};
-
 rll.List.prototype.find = function(f) {
   for (var i=0; i<this.length; i++) {
     if (f(this[i])) return this[i];
   }
   return null;
 };
-
 
 rll.Point = function(x, y) {
   this._x = x;
@@ -73,10 +66,10 @@ rll.Direction.DOWN  = new rll.Point( 0,  1);
 rll.Direction.LEFT  = new rll.Point(-1,  0);
 rll.Direction.RIGHT = new rll.Point( 1,  0);
 
-rll.Direction.N = rll.Direction.UP;
-rll.Direction.E = rll.Direction.RIGHT;
-rll.Direction.S = rll.Direction.DOWN;
-rll.Direction.W = rll.Direction.LEFT;
+rll.Direction.N  = rll.Direction.UP;
+rll.Direction.E  = rll.Direction.RIGHT;
+rll.Direction.S  = rll.Direction.DOWN;
+rll.Direction.W  = rll.Direction.LEFT;
 rll.Direction.NE = rll.Direction.N.add(rll.Direction.E);
 rll.Direction.SE = rll.Direction.S.add(rll.Direction.E);
 rll.Direction.SW = rll.Direction.S.add(rll.Direction.W);
@@ -281,6 +274,15 @@ rll.Display.prototype.clearLine = function(y) {
 rll.Actor = function(character) {
   this._point = new rll.Point(0, 0);
   this._character = character;
+  this._action = { compute: function(){} };
+};
+
+rll.Actor.prototype.setAction = function(newAction) {
+  this._action = newAction;
+};
+
+rll.Actor.prototype.action = function() {
+  this._action.compute(this);
 };
 
 rll.Actor.prototype.draw = function(display) {
@@ -330,17 +332,15 @@ rll.Terrain.prototype.walkable = function() {
   return this._walkable;
 };
 
-rll.TerrainMap = function() {
+rll.TerrainMap = function(size) {
   this._terrain = [];
-  for (var y=0, h=rll.TerrainMap._size.height(); y<h; y++) {
+  for (var y=0, h=size.height(); y<h; y++) {
     this._terrain[y] = [];
-    for (var x=0, w=rll.TerrainMap._size.width(); x<w; x++) {
+    for (var x=0, w=size.width(); x<w; x++) {
       this._terrain[y][x] = rll.Terrain.WALL;
     }
   }
 };
-
-rll.TerrainMap._size = new rll.Size(80, 21);
 
 rll.TerrainMap.prototype.draw = function(point, display) {
   this._terrain[point.y()][point.x()].draw(point, display);
@@ -355,100 +355,165 @@ rll.TerrainMap.prototype.walkableAt = function(point) {
 };
 
 rll.TerrainMap.prototype.randomWalkablePoint = function() {
-  h = rll.TerrainMap._size.height();
-  w = rll.TerrainMap._size.width();
+  h = this._terrain.length;
+  w = this._terrain[0].length;
   while(true) {
     p = new rll.Point(rll.random(0, w), rll.random(0, h));
     if (this.walkableAt(p)) return p;
   }
 };
 
-var App = {
-  _display: new rll.Display(),
-  _player: new rll.Actor(new rll.Character('@', '#088')),
-  _actors: new rll.List(),
-  _map: new rll.TerrainMap(),
-  _dirKey: {
+rll.Stage = function(size) {
+  this._terrain = new rll.TerrainMap(size);
+  this._actors = new rll.List();
+};
+
+rll.Stage.prototype.setTerrain = function(terrain, point) {
+  this._terrain.set(terrain, point);
+};
+
+rll.Stage.prototype.randomWalkablePoint = function() {
+  return this._terrain.randomWalkablePoint();
+};
+
+rll.Stage.prototype.addActor = function(actor) {
+  this._actors.push(actor);
+};
+
+rll.Stage.prototype.findActor = function(point) {
+  return this._actors.find(function(actor){
+    return actor.on(point);
+  }.bind(this));
+};
+
+rll.Stage.prototype.forEachActor = function(callback, thisObject) {
+  this._actors.forEach(callback, thisObject);
+};
+
+rll.Stage.prototype.find = function(callback) {
+  return this._actors.find(callback);
+};
+
+rll.Stage.prototype.draw = function(point, display) {
+  var a = this.findActor(point);
+  if (a) {
+    a.draw(display);
+  } else {
+    this._terrain.draw(point, display);
+  }
+};
+
+rll.Stage.prototype.walkable = function(point) {
+  if (this.findActor(point)) return false;
+  if (this._terrain.walkableAt(point) === false) return false;
+  return true;
+};
+
+rll.AI = function(game) {
+  this._game = game;
+};
+
+rll.AI.prototype.compute = function(actor) {
+  var stage = this._game.stage();
+  var directions = new rll.List();
+  for (var i=0; i<rll.Direction.AROUND.length; i++) {
+    var dir = rll.Direction.AROUND[i];
+    if (stage.walkable(actor.movedPoint(dir))) {
+      directions.push(dir);
+    }
+  }
+  actor.move(directions.choice());
+};
+
+var game = game || {};
+
+game.Game = function() {
+  this._display = new rll.Display();
+  this._player  = new rll.Actor(new rll.Character('@', '#880'));
+  this._stage   = new rll.Stage(new rll.Size(80, 21));
+  this._dirKey = {
     'h': rll.Direction.W, 'l': rll.Direction.E,
     'k': rll.Direction.N, 'j': rll.Direction.S,
     'y': rll.Direction.NW, 'u': rll.Direction.NE,
     'b': rll.Direction.SW, 'n': rll.Direction.SE
-  },
-
-  run: function() {
-    this._display.initialize();
-    document.body.appendChild(this._display.getCanvas());
-    window.addEventListener('keydown', this);
-    var digger = new ROT.Map.Digger(79, 20);
-    var callBack = function(x, y, value) {
-      if (value) { return; }
-      this._map.set(rll.Terrain.FLOOR, new rll.Point(x, y));
-    };
-    digger.create(callBack.bind(this));
-    // TODO
-    this._player.setPoint(this._map.randomWalkablePoint());
-    for (var i=0; i<8; i++) {
-      var monster = new rll.Actor(new rll.Character('o', '#0f0'));
-      monster.setPoint(this._map.randomWalkablePoint());
-      this._actors.push(monster);
-    }
-    this.drawMap();
-  },
-
-  drawMap: function() {
-    for (var y=0; y<21; y++) {
-      for (var x=0; x<80; x++) {
-        this._map.draw(new rll.Point(x, y), this._display);
-      }
-    }
-    this._display.write(new rll.Point(0, 0), 'hello 世界', '#0c0');
-    this._player.draw(this._display);
-    this._actors.reduce(function(actor){
-      actor.draw(this._display);
-    }.bind(this));
-  },
-
-  handleEvent: function(e) {
-    var key = String.fromCharCode(e.keyCode).toLowerCase();
-    if (key in this._dirKey) {
-      if (this.moveActor(this._player, this._dirKey[key])) {
-        this.moveActors();
-      }
-    } else {
-      switch (key) {
-      case 'r':
-        this._display.clear();
-        break;
-      case 'c':
-        this._display.clearLine(0);
-        break;
-      default:
-        return;
-      }
-    }
-    this.drawMap();
-  },
-
-  findActor: function(point) {
-    return this._actors.find(function(actor){
-      return actor.on(point);
-    }.bind(this));
-  },
-
-  moveActors: function() {
-    this._actors.reduce(function(actor){
-      this.moveActor(actor, rll.Direction.AROUND.choice());
-    }.bind(this));
-  },
-
-  moveActor: function(actor, direction) {
-    to = actor.movedPoint(direction);
-    if (this._player.on(to)) return false;
-    if (this._map.walkableAt(to) === false) return false;
-    if (this.findActor(to)) return false;
-    actor.move(direction);
-    return true;
-  },
+  };
 };
 
-App.run();
+game.Game.prototype.stage = function() {
+  return this._stage;
+};
+
+game.Game.prototype.run = function() {
+  this._display.initialize();
+  document.body.appendChild(this._display.getCanvas());
+  window.addEventListener('keydown', this);
+  var digger = new ROT.Map.Digger(79, 20);
+  var callBack = function(x, y, value) {
+    if (value) { return; }
+    this._stage.setTerrain(rll.Terrain.FLOOR, new rll.Point(x, y));
+  };
+  digger.create(callBack.bind(this));
+  this._player.setPoint(this._stage.randomWalkablePoint());
+  this._stage.addActor(this._player);
+  for (var i=0; i<3; i++) {
+    var orc = new rll.Actor(new rll.Character('o', '#0f0'));
+    var goblin = new rll.Actor(new rll.Character('g', '#66f'));
+    orc.setPoint(this._stage.randomWalkablePoint());
+    goblin.setPoint(this._stage.randomWalkablePoint());
+    orc.setAction(new rll.AI(this));
+    goblin.setAction(new rll.AI(this));
+    this._stage.addActor(orc);
+    this._stage.addActor(goblin);
+  }
+  this.drawMap();
+};
+
+game.Game.prototype.drawMap = function() {
+  for (var y=0; y<21; y++) {
+    for (var x=0; x<80; x++) {
+      this._stage.draw(new rll.Point(x, y), this._display);
+    }
+  }
+  this._display.write(new rll.Point(0, 0), 'hello 世界', '#0c0');
+};
+
+game.Game.prototype.handleEvent = function(e) {
+  var key = String.fromCharCode(e.keyCode).toLowerCase();
+  if (key in this._dirKey) {
+    if (this.moveActor(this._player, this._dirKey[key])) {
+      this.actorsAction();
+    }
+  } else {
+    switch (key) {
+    case 'r':
+      this._display.clear();
+      break;
+    case 'c':
+      this._display.clearLine(0);
+      break;
+    default:
+      return;
+    }
+  }
+  this.drawMap();
+};
+
+game.Game.prototype.actorsAction = function() {
+  this._stage.forEachActor(function(actor){
+    actor.action();
+  });
+};
+
+game.Game.prototype.moveActor = function(actor, direction) {
+  var to = actor.movedPoint(direction);
+  if (this._stage.walkable(actor.movedPoint(direction)) === false) {
+    return false;
+  }
+  actor.move(direction);
+  return true;
+};
+
+(function() {
+  var newGame = new game.Game();
+  newGame.run();
+})();
