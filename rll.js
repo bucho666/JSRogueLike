@@ -354,10 +354,15 @@ rll.Display.prototype.clearLine = function(y) {
   }
 };
 
-rll.Actor = function(character) {
+rll.Actor = function(character, name) {
   this._point = new rll.Point(0, 0);
   this._character = character;
   this._action = { compute: function(){} };
+  this._name = name;
+};
+
+rll.Actor.prototype.name = function() {
+  return this._name;
 };
 
 rll.Actor.prototype.lineTo = function(from) {
@@ -566,12 +571,28 @@ rll.AI.prototype.randomMove = function(actor) {
   actor.move(directions.choice());
 };
 
+rll.Messages = function() {
+  this._messages = [];
+};
+
+rll.Messages.prototype.add = function(message) {
+  this._messages.unshift(message);
+};
+
+rll.Messages.prototype.draw = function(display) {
+  if (this._messages.length === 0) return;
+  message = this._messages.shift();
+  display.clearLine(0);
+  display.write(new rll.Point(0, 0), message, '#ccc');
+};
+
 var game = game || {};
 
 game.Game = function() {
   this._display = new rll.Display();
   this._player  = new rll.Actor(new rll.Character('@', '#880'));
   this._stage   = new rll.Stage(new rll.Size(80, 21));
+  this._messages = new rll.Messages();
   this._dirKey = {
     'h': rll.Direction.W,  'l': rll.Direction.E,
     'k': rll.Direction.N,  'j': rll.Direction.S,
@@ -601,27 +622,30 @@ game.Game.prototype.run = function() {
   this._player.setPoint(this._stage.randomWalkablePoint());
   this._stage.addActor(this._player);
   for (var i=0; i<3; i++) {
-    var orc = new rll.Actor(new rll.Character('o', '#0f0'));
+    var orc = new rll.Actor(new rll.Character('o', '#0f0'), 'オーク');
     orc.setPoint(this._stage.randomWalkablePoint());
     orc.setAction(new rll.AI(this));
     this._stage.addActor(orc);
-    var goblin = new rll.Actor(new rll.Character('g', '#66f'));
+    var goblin = new rll.Actor(new rll.Character('g', '#66f'), 'ゴブリン');
     goblin.setPoint(this._stage.randomWalkablePoint());
     goblin.setAction(new rll.AI(this));
     this._stage.addActor(goblin);
   }
-  this.drawMap();
+  this.draw();
 };
 
-game.Game.prototype.drawMap = function() {
+game.Game.prototype.draw = function() {
   for (var y=0; y<21; y++) {
     for (var x=0; x<80; x++) {
       this._stage.draw(new rll.Point(x, y), this._display);
     }
   }
-  this._display.write(new rll.Point(0, 0), 'hello 世界', '#0c0');
+  this._messages.draw(this._display);
 };
 
+game.Game.prototype.message = function(message) {
+  this._messages.add(message);
+};
 game.Game.prototype.handleEvent = function(e) {
   var key = String.fromCharCode(e.keyCode).toLowerCase();
   if (key in this._dirKey) {
@@ -640,7 +664,7 @@ game.Game.prototype.handleEvent = function(e) {
       return;
     }
   }
-  this.drawMap();
+  this.draw();
 };
 
 game.Game.prototype.actorsAction = function() {
@@ -651,6 +675,10 @@ game.Game.prototype.actorsAction = function() {
 
 game.Game.prototype.moveActor = function(actor, direction) {
   var to = actor.movedPoint(direction);
+  var otherActor = this._stage.findActor(to);
+  if (otherActor) {
+    this.message(otherActor.name() + 'が居る'); // TODO
+  }
   if (this._stage.walkable(actor.movedPoint(direction)) === false) {
     return false;
   }
