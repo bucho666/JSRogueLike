@@ -1,4 +1,3 @@
-// TODO monster作成
 var rll = rll || {};
 
 var inherit = function(child, parent) {
@@ -32,6 +31,20 @@ rll.List.prototype.find = function(f) {
   return null;
 };
 
+rll.List.prototype.next = function(element, count) {
+  count = count || 1;
+  var i = this.indexOf(element);
+  i = (i + count) % this.length;
+  return this[i];
+};
+
+rll.List.prototype.prev = function(element, count) {
+  count = count || 1;
+  var i = this.indexOf(element);
+  i = (i + this.length - count) % this.length;
+  return this[i];
+};
+
 rll.Point = function(x, y) {
   this._x = x;
   this._y = y;
@@ -56,8 +69,77 @@ rll.Point.prototype.add = function(other) {
   return new rll.Point(x, y);
 };
 
+rll.Point.prototype.distance = function(other) {
+  var x = this.x() - other.x();
+  var y = this.y() - other.y();
+  return new rll.Point(x, y);
+};
+
 rll.Point.prototype.toString = function() {
   return this.x() + ':' + this.y();
+};
+
+rll.Point.prototype.lineTo = function(to) {
+  var distance = to.distance(this),
+      dx = distance.x(), dy = distance.y(),
+      addX = dx / Math.abs(dx),
+      addY = dy / Math.abs(dy),
+      cx = this.x(), cy = this.y(),
+      absDistanceX = Math.abs(dx),
+      absDistanceY = Math.abs(dy),
+      error, line = [];
+  if (absDistanceX > absDistanceY) {
+    error = absDistanceX / 2;
+    while (cx != to.x()) {
+      cx += addX;
+      error += absDistanceY;
+      if (error > absDistanceX) {
+        cy += addY;
+        error -= absDistanceX;
+      }
+      line.push(new rll.Point(cx, cy));
+    }
+  } else {
+    error = absDistanceY / 2;
+    while (cy != to.y()) {
+      cy += addY;
+      error += absDistanceX;
+      if (error > absDistanceY) {
+        cx += addX;
+        error -= absDistanceY;
+      }
+      line.push(new rll.Point(cx, cy));
+    }
+  }
+  return line;
+};
+
+rll.Point.prototype.directionsTo = function(to) {
+  var distance = to.distance(this),
+      dx = distance.x(),
+      dy = distance.y(),
+      absDistanceX = Math.abs(dx),
+      absDistanceY = Math.abs(dy),
+      tx = dx === 0 ? 0 : dx / absDistanceX,
+      ty = dy === 0 ? 0 : dy / absDistanceY,
+      v = rll.random(0, absDistanceX + absDistanceY),
+      slash = new rll.Point(tx, ty),
+      straight;
+  if (absDistanceX > absDistanceY) {
+    straight = new rll.Point(tx, 0);
+    if (v < absDistanceX) {
+      return new rll.List(straight, slash);
+    } else {
+      return new rll.List(slash, straight);
+    }
+  } else {
+    straight = new rll.Point(0, ty);
+    if (v < absDistanceY) {
+      return new rll.List(straight, slash);
+    } else {
+      return new rll.List(slash, straight);
+    }
+  }
 };
 
 rll.Direction = {};
@@ -76,9 +158,10 @@ rll.Direction.SW = rll.Direction.S.add(rll.Direction.W);
 rll.Direction.NW = rll.Direction.N.add(rll.Direction.W);
 
 rll.Direction.AROUND = new rll.List(
-  rll.Direction.N, rll.Direction.E, rll.Direction.S,
-  rll.Direction.W, rll.Direction.NE, rll.Direction.SE,
-  rll.Direction.SW, rll.Direction.NW);
+  rll.Direction.N, rll.Direction.NE,
+  rll.Direction.E, rll.Direction.SE,
+  rll.Direction.S, rll.Direction.SW,
+  rll.Direction.W, rll.Direction.NW);
 
 rll.Font = function(family, size) {
   this._fontFamily = family;
@@ -277,6 +360,18 @@ rll.Actor = function(character) {
   this._action = { compute: function(){} };
 };
 
+rll.Actor.prototype.lineTo = function(from) {
+  return from.lineTo(this._point);
+};
+
+rll.Actor.prototype.point = function() {
+  return this._point;
+};
+
+rll.Actor.prototype.directionsTo = function(point) {
+  return this._point.directionsTo(point);
+};
+
 rll.Actor.prototype.setAction = function(newAction) {
   this._action = newAction;
 };
@@ -409,11 +504,57 @@ rll.Stage.prototype.walkable = function(point) {
   return true;
 };
 
+rll.Stage.prototype.passLight = function(point) {
+  if (this._terrain.walkableAt(point) === false) return false;
+  return true;
+};
+
 rll.AI = function(game) {
   this._game = game;
+  this._lastDest = null;
 };
 
 rll.AI.prototype.compute = function(actor) {
+  var stage = this._game.stage();
+  var player = this._game.player();
+  var playerPoint = player.point();
+  if (this._lastDest && actor.on(this._lastDest)) {
+    this._lastDest = null;
+  }
+  if (this.canSee(actor, playerPoint)) {
+    this._lastDest = playerPoint;
+    this.chase(actor, playerPoint);
+  } else if (this._lastDest) {
+    this.chase(actor, this._lastDest);
+  } else {
+    this.randomMove(actor);
+  }
+};
+
+rll.AI.prototype.canSee = function(actor, point) {
+  var stage = this._game.stage();
+  var line = actor.lineTo(point);
+  for (var i=0; i<line.length; i++) {
+    if (stage.passLight(line[i]) === false) {
+      return false;
+    }
+  }
+  return true;
+};
+
+rll.AI.prototype.chase = function(actor, point) {
+  var stage = this._game.stage();
+  var directions = actor.directionsTo(point);
+  for (var i=0; i<directions.length; i++) {
+    var dir = directions[i];
+    if (stage.walkable(actor.movedPoint(dir))) {
+      actor.move(dir);
+      return;
+    }
+  }
+};
+
+rll.AI.prototype.randomMove = function(actor) {
   var stage = this._game.stage();
   var directions = new rll.List();
   for (var i=0; i<rll.Direction.AROUND.length; i++) {
@@ -432,8 +573,8 @@ game.Game = function() {
   this._player  = new rll.Actor(new rll.Character('@', '#880'));
   this._stage   = new rll.Stage(new rll.Size(80, 21));
   this._dirKey = {
-    'h': rll.Direction.W, 'l': rll.Direction.E,
-    'k': rll.Direction.N, 'j': rll.Direction.S,
+    'h': rll.Direction.W,  'l': rll.Direction.E,
+    'k': rll.Direction.N,  'j': rll.Direction.S,
     'y': rll.Direction.NW, 'u': rll.Direction.NE,
     'b': rll.Direction.SW, 'n': rll.Direction.SE
   };
@@ -441,6 +582,10 @@ game.Game = function() {
 
 game.Game.prototype.stage = function() {
   return this._stage;
+};
+
+game.Game.prototype.player = function() {
+  return this._player;
 };
 
 game.Game.prototype.run = function() {
@@ -457,12 +602,12 @@ game.Game.prototype.run = function() {
   this._stage.addActor(this._player);
   for (var i=0; i<3; i++) {
     var orc = new rll.Actor(new rll.Character('o', '#0f0'));
-    var goblin = new rll.Actor(new rll.Character('g', '#66f'));
     orc.setPoint(this._stage.randomWalkablePoint());
-    goblin.setPoint(this._stage.randomWalkablePoint());
     orc.setAction(new rll.AI(this));
-    goblin.setAction(new rll.AI(this));
     this._stage.addActor(orc);
+    var goblin = new rll.Actor(new rll.Character('g', '#66f'));
+    goblin.setPoint(this._stage.randomWalkablePoint());
+    goblin.setAction(new rll.AI(this));
     this._stage.addActor(goblin);
   }
   this.drawMap();
