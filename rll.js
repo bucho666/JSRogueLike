@@ -148,12 +148,19 @@ rll.Point.prototype.directionsTo = function(to) {
   }
 };
 
+rll.Point.prototype.isNextTo = function(point) {
+  var dx = Math.abs(this.x() - point.x());
+  var dy = Math.abs(this.y() - point.y());
+  return (dx < 2 && dy < 2);
+};
+
 rll.Direction = {};
 rll.Direction.UP    = new rll.Point( 0, -1);
 rll.Direction.DOWN  = new rll.Point( 0,  1);
 rll.Direction.LEFT  = new rll.Point(-1,  0);
 rll.Direction.RIGHT = new rll.Point( 1,  0);
 
+rll.Direction.HERE  = new rll.Point(0, 0);
 rll.Direction.N  = rll.Direction.UP;
 rll.Direction.E  = rll.Direction.RIGHT;
 rll.Direction.S  = rll.Direction.DOWN;
@@ -413,6 +420,10 @@ rll.Actor.prototype.on = function(point) {
   return this._point.equal(point);
 };
 
+rll.Actor.prototype.isNextTo = function(point) {
+  return this._point.isNextTo(point);
+};
+
 rll.Terrain = function(property) {
   this._character = new rll.Character(property.character, property.color);
   this._walkable = property.walkable;
@@ -536,6 +547,10 @@ rll.AI.prototype.compute = function(actor) {
   if (this._lastDest && actor.on(this._lastDest)) {
     this._lastDest = null;
   }
+  if (actor.isNextTo(playerPoint)) {
+    this._game.message(actor.name() + 'が攻撃してきた！');
+    return;
+  }
   if (this.canSee(actor, playerPoint)) {
     this._lastDest = playerPoint;
     this.chase(actor, playerPoint);
@@ -562,7 +577,8 @@ rll.AI.prototype.chase = function(actor, point) {
   var directions = actor.directionsTo(point);
   for (var i=0; i<directions.length; i++) {
     var dir = directions[i];
-    if (stage.walkable(actor.movedPoint(dir))) {
+    var to = actor.movedPoint(dir);
+    if (stage.walkable(to)) {
       actor.move(dir);
       return;
     }
@@ -607,7 +623,8 @@ game.Game = function() {
     'h': rll.Direction.W,  'l': rll.Direction.E,
     'k': rll.Direction.N,  'j': rll.Direction.S,
     'y': rll.Direction.NW, 'u': rll.Direction.NE,
-    'b': rll.Direction.SW, 'n': rll.Direction.SE
+    'b': rll.Direction.SW, 'n': rll.Direction.SE,
+    'w': rll.Direction.HERE
   };
 };
 
@@ -684,11 +701,12 @@ game.Game.prototype.actorsAction = function() {
 };
 
 game.Game.prototype.movePlayer = function(actor, direction) {
+  if (direction.equal(rll.Direction.HERE)) return true;
   var to = actor.movedPoint(direction);
   var monster = this._stage.findActor(to);
   if (monster) {
     this.attackToMonster(monster);
-    return;
+    return true;
   }
   if (this._stage.walkable(actor.movedPoint(direction)) === false) {
     return false;
