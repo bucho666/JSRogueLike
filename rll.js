@@ -45,6 +45,12 @@ rll.List.prototype.prev = function(element, count) {
   return this[i];
 };
 
+rll.List.prototype.remove = function(element) {
+  var index = this.indexOf(element);
+  if (index === -1) return;
+  this.splice(index, 1);
+};
+
 rll.Point = function(x, y) {
   this._x = x;
   this._y = y;
@@ -480,6 +486,10 @@ rll.Stage.prototype.addActor = function(actor) {
   this._actors.push(actor);
 };
 
+rll.Stage.prototype.removeActor = function(actor) {
+  this._actors.remove(actor);
+};
+
 rll.Stage.prototype.findActor = function(point) {
   return this._actors.find(function(actor){
     return actor.on(point);
@@ -649,7 +659,7 @@ game.Game.prototype.message = function(message) {
 game.Game.prototype.handleEvent = function(e) {
   var key = String.fromCharCode(e.keyCode).toLowerCase();
   if (key in this._dirKey) {
-    if (this.moveActor(this._player, this._dirKey[key])) {
+    if (this.movePlayer(this._player, this._dirKey[key])) {
       this.actorsAction();
     }
   } else {
@@ -673,11 +683,12 @@ game.Game.prototype.actorsAction = function() {
   });
 };
 
-game.Game.prototype.moveActor = function(actor, direction) {
+game.Game.prototype.movePlayer = function(actor, direction) {
   var to = actor.movedPoint(direction);
-  var otherActor = this._stage.findActor(to);
-  if (otherActor) {
-    this.message(otherActor.name() + 'が居る'); // TODO
+  var monster = this._stage.findActor(to);
+  if (monster) {
+    this.attackToMonster(monster);
+    return;
   }
   if (this._stage.walkable(actor.movedPoint(direction)) === false) {
     return false;
@@ -686,6 +697,10 @@ game.Game.prototype.moveActor = function(actor, direction) {
   return true;
 };
 
+game.Game.prototype.attackToMonster = function(monster) {
+    this.message(monster.name() + 'をたおした'); // TODO
+    this._stage.removeActor(monster);
+};
 (function() {
   var newGame = new game.Game();
   newGame.run();
