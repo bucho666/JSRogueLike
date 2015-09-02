@@ -412,6 +412,11 @@ rll.Actor.prototype.action = function() {
   this._action.compute(this);
 };
 
+// TODO プレイヤーアップデートアクションを実装する
+// HPの回復を実装
+// 後やっぱり他のActor行動中はイベントハンドラを削除した方が良いかも
+// イベントハンドラクラスを実装して管理すればOK
+
 rll.Actor.prototype.draw = function(display) {
   display.write(this._point,
       this._character.glyph(),
@@ -566,7 +571,7 @@ rll.AI.prototype.compute = function(actor) {
     this._lastDest = null;
   }
   if (actor.isNextTo(playerPoint)) {
-    this._game.message(actor.name() + 'が攻撃してきた！');
+    this.attackToPlayer(actor, player);
     return;
   }
   if (this.canSee(actor, playerPoint)) {
@@ -577,6 +582,15 @@ rll.AI.prototype.compute = function(actor) {
   } else {
     this.randomMove(actor);
   }
+};
+
+rll.AI.prototype.attackToPlayer = function(actor, player) {
+  damage = rll.random(1, 8);
+  player.damage(damage);
+  this._game.message(actor.name() + 'の攻撃が命中 ' + damage + 'のダメージ!!');
+  if (player.isDead() === false) return;
+  this._game.message('あなたは死んだ…');
+  this._game.over();
 };
 
 rll.AI.prototype.canSee = function(actor, point) {
@@ -695,6 +709,7 @@ game.Game.prototype.draw = function() {
 game.Game.prototype.message = function(message) {
   this._messages.add(message);
 };
+
 game.Game.prototype.handleEvent = function(e) {
   var key = e.keyCode;
   if (key in this._dirKey) {
@@ -729,12 +744,16 @@ game.Game.prototype.movePlayer = function(actor, direction) {
 };
 
 game.Game.prototype.attackToMonster = function(monster) {
-    damage = rll.random(1, 8);
-    monster.damage(damage);
-    this.message(monster.name() + 'に命中 ' + damage + 'のダメージ!!'); // TODO
-    if (monster.isDead() === false) return;
-    this.message(monster.name() + 'をたおした!!'); // TODO
-    this._stage.removeActor(monster);
+  damage = rll.random(1, 8);
+  monster.damage(damage);
+  this.message(monster.name() + 'に命中 ' + damage + 'のダメージ!');
+  if (monster.isDead() === false) return;
+  this.message(monster.name() + 'をたおした!!');
+  this._stage.removeActor(monster);
+};
+
+game.Game.prototype.over = function() {
+  window.removeEventListener('keydown', this);
 };
 
 (function() {
