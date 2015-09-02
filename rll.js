@@ -372,6 +372,20 @@ rll.Actor = function(character, name) {
   this._character = character;
   this._action = { compute: function(){} };
   this._name = name;
+  this._hp = 8;
+  this._hp_max = 8;
+};
+
+rll.Actor.prototype.setHP = function(hp) {
+  this._hp = hp;
+};
+
+rll.Actor.prototype.damage = function(damage) {
+  this._hp -= damage;
+};
+
+rll.Actor.prototype.isDead = function() {
+  return (this._hp < 1);
 };
 
 rll.Actor.prototype.name = function() {
@@ -422,6 +436,10 @@ rll.Actor.prototype.on = function(point) {
 
 rll.Actor.prototype.isNextTo = function(point) {
   return this._point.isNextTo(point);
+};
+
+rll.Actor.prototype.drawStatusLine = function(point, display) {
+  display.write(point, 'hp:' + this._hp + '(' + this._hp_max + ')');
 };
 
 rll.Terrain = function(property) {
@@ -598,18 +616,21 @@ rll.AI.prototype.randomMove = function(actor) {
 };
 
 rll.Messages = function() {
-  this._messages = [];
+  this._messages = '';
 };
 
 rll.Messages.prototype.add = function(message) {
-  this._messages.unshift(message);
+  if (this._messages.length > 0) {
+    message = ' ' + message;
+  }
+  this._messages += message;
 };
 
 rll.Messages.prototype.draw = function(display) {
   if (this._messages.length === 0) return;
-  message = this._messages.shift();
   display.clearLine(0);
-  display.write(new rll.Point(0, 0), message, '#ccc');
+  display.write(new rll.Point(0, 0), this._messages, '#ccc');
+  this._messages = '';
 };
 
 var game = game || {};
@@ -620,11 +641,11 @@ game.Game = function() {
   this._stage   = new rll.Stage(new rll.Size(80, 21));
   this._messages = new rll.Messages();
   this._dirKey = {
-    'h': rll.Direction.W,  'l': rll.Direction.E,
-    'k': rll.Direction.N,  'j': rll.Direction.S,
-    'y': rll.Direction.NW, 'u': rll.Direction.NE,
-    'b': rll.Direction.SW, 'n': rll.Direction.SE,
-    'w': rll.Direction.HERE
+    72: rll.Direction.W,  76: rll.Direction.E,
+    75: rll.Direction.N,  74: rll.Direction.S,
+    89: rll.Direction.NW, 85: rll.Direction.NE,
+    66: rll.Direction.SW, 78: rll.Direction.SE,
+    190: rll.Direction.HERE
   };
 };
 
@@ -668,28 +689,20 @@ game.Game.prototype.draw = function() {
     }
   }
   this._messages.draw(this._display);
+  this._player.drawStatusLine(new rll.Point(0, 21), this._display);
 };
 
 game.Game.prototype.message = function(message) {
   this._messages.add(message);
 };
 game.Game.prototype.handleEvent = function(e) {
-  var key = String.fromCharCode(e.keyCode).toLowerCase();
+  var key = e.keyCode;
   if (key in this._dirKey) {
     if (this.movePlayer(this._player, this._dirKey[key])) {
       this.actorsAction();
     }
   } else {
-    switch (key) {
-    case 'r':
-      this._display.clear();
-      break;
-    case 'c':
-      this._display.clearLine(0);
-      break;
-    default:
-      return;
-    }
+    return;
   }
   this.draw();
 };
@@ -716,9 +729,14 @@ game.Game.prototype.movePlayer = function(actor, direction) {
 };
 
 game.Game.prototype.attackToMonster = function(monster) {
-    this.message(monster.name() + 'をたおした'); // TODO
+    damage = rll.random(1, 8);
+    monster.damage(damage);
+    this.message(monster.name() + 'に命中 ' + damage + 'のダメージ!!'); // TODO
+    if (monster.isDead() === false) return;
+    this.message(monster.name() + 'をたおした!!'); // TODO
     this._stage.removeActor(monster);
 };
+
 (function() {
   var newGame = new game.Game();
   newGame.run();
