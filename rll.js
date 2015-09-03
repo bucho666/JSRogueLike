@@ -367,29 +367,40 @@ rll.Display.prototype.clearLine = function(y) {
   }
 };
 
+rll.State = function(value) {
+  this._current = value;
+  this._max = value;
+};
+
+rll.State.prototype.add = function(value) {
+  this._current += value;
+  if (this._current > this._max) {
+    this._current = this._max;
+  }
+};
+
+rll.State.prototype.addMax = function(value) {
+  this._max += max;
+};
+
 rll.Actor = function(character, name) {
   this._point = new rll.Point(0, 0);
   this._character = character;
   this._action = { compute: function(){} };
   this._name = name;
-  // TODO HPをリファクタリング
-  this._hp = 8;
-  this._hp_max = 8;
+  this._hp = new rll.State(8);
 };
 
 rll.Actor.prototype.setHP = function(hp) {
-  this._hp = hp;
+  this._hp = new rll.State(hp);
 };
 
 rll.Actor.prototype.damage = function(damage) {
-  this._hp -= damage;
+  this._hp.add(-damage);
 };
 
-rll.Actor.prototype.heal = function(value) {
-  this._hp += value;
-  if (this._hp > this._hp_max) {
-    this._hp = this._hp_max;
-  }
+rll.Actor.prototype.heal = function(hp) {
+  this._hp.add(hp);
 };
 
 rll.Actor.prototype.isDead = function() {
@@ -461,7 +472,9 @@ rll.Player.AutoHeal = function(actor) {
 };
 
 rll.Player.AutoHeal.prototype.compute = function() {
-  this._actor.heal(1);
+  if (rll.random(1, 8) == 1) {
+    this._actor.heal(1);
+  }
 };
 
 rll.Terrain = function(property) {
