@@ -12,7 +12,7 @@ rll.random = function(min, max) {
 };
 
 rll.List = function() {
-  Array.apply(this);
+  Array.call(this);
   for(var i = 0; i<arguments.length; i++) {
     this.push(arguments[i]);
   }
@@ -372,6 +372,7 @@ rll.Actor = function(character, name) {
   this._character = character;
   this._action = { compute: function(){} };
   this._name = name;
+  // TODO HPをリファクタリング
   this._hp = 8;
   this._hp_max = 8;
 };
@@ -382,6 +383,13 @@ rll.Actor.prototype.setHP = function(hp) {
 
 rll.Actor.prototype.damage = function(damage) {
   this._hp -= damage;
+};
+
+rll.Actor.prototype.heal = function(value) {
+  this._hp += value;
+  if (this._hp > this._hp_max) {
+    this._hp = this._hp_max;
+  }
 };
 
 rll.Actor.prototype.isDead = function() {
@@ -412,11 +420,6 @@ rll.Actor.prototype.action = function() {
   this._action.compute(this);
 };
 
-// TODO プレイヤーアップデートアクションを実装する
-// HPの回復を実装
-// 後やっぱり他のActor行動中はイベントハンドラを削除した方が良いかも
-// イベントハンドラクラスを実装して管理すればOK
-
 rll.Actor.prototype.draw = function(display) {
   display.write(this._point,
       this._character.glyph(),
@@ -445,6 +448,20 @@ rll.Actor.prototype.isNextTo = function(point) {
 
 rll.Actor.prototype.drawStatusLine = function(point, display) {
   display.write(point, 'hp:' + this._hp + '(' + this._hp_max + ')');
+};
+
+rll.Player = function(character, name) {
+  rll.Actor.call(this, character, name);
+  this.setAction(new rll.Player.AutoHeal(this));
+};
+inherit(rll.Player, rll.Actor);
+
+rll.Player.AutoHeal = function(actor) {
+  this._actor = actor;
+};
+
+rll.Player.AutoHeal.prototype.compute = function() {
+  this._actor.heal(1);
 };
 
 rll.Terrain = function(property) {
@@ -651,7 +668,7 @@ var game = game || {};
 
 game.Game = function() {
   this._display = new rll.Display();
-  this._player  = new rll.Actor(new rll.Character('@', '#880'));
+  this._player  = new rll.Player(new rll.Character('@', '#880'), 'player');
   this._stage   = new rll.Stage(new rll.Size(80, 21));
   this._messages = new rll.Messages();
   this._dirKey = {
