@@ -372,6 +372,10 @@ rll.State = function(value) {
   this._max = value;
 };
 
+rll.State.prototype.current = function() {
+  return this._current;
+};
+
 rll.State.prototype.add = function(value) {
   this._current += value;
   if (this._current > this._max) {
@@ -383,12 +387,18 @@ rll.State.prototype.addMax = function(value) {
   this._max += max;
 };
 
+rll.State.prototype.toString = function() {
+  return this._current + '(' + this._max + ')';
+};
+
 rll.Actor = function(character, name) {
   this._point = new rll.Point(0, 0);
   this._character = character;
   this._action = { compute: function(){} };
   this._name = name;
   this._hp = new rll.State(8);
+  this._level = 1;
+  this._AC = 8;
 };
 
 rll.Actor.prototype.setHP = function(hp) {
@@ -404,7 +414,7 @@ rll.Actor.prototype.heal = function(hp) {
 };
 
 rll.Actor.prototype.isDead = function() {
-  return (this._hp < 1);
+  return this._hp.current() < 1;
 };
 
 rll.Actor.prototype.name = function() {
@@ -458,7 +468,15 @@ rll.Actor.prototype.isNextTo = function(point) {
 };
 
 rll.Actor.prototype.drawStatusLine = function(point, display) {
-  display.write(point, 'hp:' + this._hp + '(' + this._hp_max + ')');
+  display.write(point, 'hp:' + this._hp);
+};
+
+rll.Actor.prototype.toHit = function() {
+  return this._level;
+};
+
+rll.Actor.prototype.AC = function() {
+  return this._AC;
 };
 
 rll.Player = function(character, name) {
@@ -615,8 +633,12 @@ rll.AI.prototype.compute = function(actor) {
 };
 
 rll.AI.prototype.attackToPlayer = function(actor, player) {
-  damage = rll.random(1, 8);
-  player.damage(damage);
+  var attack = new game.MeleeAttack(actor, player);
+  if (attack.isHit() === false) {
+    this._game.message(actor.name() + 'の攻撃をかわした!');
+    return;
+  }
+  var damage = attack.damage();
   this._game.message(actor.name() + 'の攻撃が命中 ' + damage + 'のダメージ!!');
   if (player.isDead() === false) return;
   this._game.message('あなたは死んだ…');
@@ -773,9 +795,32 @@ game.Game.prototype.movePlayer = function(actor, direction) {
   return true;
 };
 
+// TODO Melee Attackクラスを作成
+// attaker, defender
+// isHit, damage
+game.MeleeAttack = function(attaker, defender) {
+  this._attaker = attaker;
+  this._defender = defender;
+};
+
+game.MeleeAttack.prototype.isHit = function() {
+  var rolls = rll.random(1, 21);
+  return rolls < (this._defender.AC() - this._attaker.toHit());
+};
+
+game.MeleeAttack.prototype.damage = function() {
+  var damagePoint = rll.random(1, 9);
+  this._defender.damage(damagePoint);
+  return damagePoint;
+};
+
 game.Game.prototype.attackToMonster = function(monster) {
-  damage = rll.random(1, 8);
-  monster.damage(damage);
+  var attack = new game.MeleeAttack(this._player, monster);
+  if (attack.isHit() === false) {
+    this.message(monster.name() + 'にかわされた!');
+    return;
+  }
+  var damage = attack.damage();
   this.message(monster.name() + 'に命中 ' + damage + 'のダメージ!');
   if (monster.isDead() === false) return;
   this.message(monster.name() + 'をたおした!!');
