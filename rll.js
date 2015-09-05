@@ -1,10 +1,23 @@
-var rll = rll || {};
-
 var inherit = function(child, parent) {
   var F = function(){};
   F.prototype = parent.prototype;
   child.prototype = new F();
   child.prototype.constructer = child;
+};
+
+var rll = rll || {};
+
+rll.key = {
+  A: 65, B: 66, C: 67,
+  D: 68, E: 69, F: 70,
+  G: 71, H: 72, I: 73,
+  J: 74, K: 75, L: 76,
+  M: 77, N: 78, O: 79,
+  P: 80, Q: 81, R: 82,
+  S: 83, T: 84, U: 85,
+  V: 86, W: 87, X: 88,
+  Y: 89,
+  PERIOD: 190
 };
 
 rll.random = function(min, max) {
@@ -512,6 +525,13 @@ rll.Terrain.WALL = new rll.Terrain({
   walkable: false,
   });
 
+rll.Terrain.DOWN_STAIRS = new rll.Terrain({
+  character: '>',
+  color:'#ccc',
+  walkable: true,
+  });
+
+
 rll.Terrain.prototype.draw = function(point, display) {
   display.write(point, this._character.glyph(), this._character.color());
 };
@@ -542,6 +562,10 @@ rll.TerrainMap.prototype.walkableAt = function(point) {
   return this._terrain[point.y()][point.x()].walkable();
 };
 
+rll.TerrainMap.prototype.downableAt= function(point) {
+  return this._terrain[point.y()][point.x()] == rll.Terrain.DOWN_STAIRS;
+};
+
 rll.TerrainMap.prototype.randomWalkablePoint = function() {
   h = this._terrain.length;
   w = this._terrain[0].length;
@@ -551,9 +575,14 @@ rll.TerrainMap.prototype.randomWalkablePoint = function() {
   }
 };
 
-rll.Stage = function(size) {
+rll.Stage = function(size, floor) {
   this._terrain = new rll.TerrainMap(size);
   this._actors = new rll.List();
+  this._floor = floor;
+};
+
+rll.Stage.prototype.floor = function() {
+  return this._floor;
 };
 
 rll.Stage.prototype.setTerrain = function(terrain, point) {
@@ -595,10 +624,14 @@ rll.Stage.prototype.draw = function(point, display) {
   }
 };
 
-rll.Stage.prototype.walkable = function(point) {
+rll.Stage.prototype.walkableAt = function(point) {
   if (this.findActor(point)) return false;
   if (this._terrain.walkableAt(point) === false) return false;
   return true;
+};
+
+rll.Stage.prototype.downableAt = function(point) {
+  return this._terrain.downableAt(point);
 };
 
 rll.Stage.prototype.passLight = function(point) {
@@ -662,7 +695,7 @@ rll.AI.prototype.chase = function(actor, point) {
   for (var i=0; i<directions.length; i++) {
     var dir = directions[i];
     var to = actor.movedPoint(dir);
-    if (stage.walkable(to)) {
+    if (stage.walkableAt(to)) {
       actor.move(dir);
       return;
     }
@@ -674,7 +707,7 @@ rll.AI.prototype.randomMove = function(actor) {
   var directions = new rll.List();
   for (var i=0; i<rll.Direction.AROUND.length; i++) {
     var dir = rll.Direction.AROUND[i];
-    if (stage.walkable(actor.movedPoint(dir))) {
+    if (stage.walkableAt(actor.movedPoint(dir))) {
       directions.push(dir);
     }
   }
@@ -704,15 +737,18 @@ var game = game || {};
 game.Game = function() {
   this._display = new rll.Display();
   this._player  = new rll.Player(new rll.Character('@', '#880'), 'player');
-  this._stage   = new rll.Stage(new rll.Size(80, 21));
+  this._stage   = new rll.Stage(new rll.Size(80, 21), 0);
   this._messages = new rll.Messages();
-  this._dirKey = {
-    72: rll.Direction.W,  76: rll.Direction.E,
-    75: rll.Direction.N,  74: rll.Direction.S,
-    89: rll.Direction.NW, 85: rll.Direction.NE,
-    66: rll.Direction.SW, 78: rll.Direction.SE,
-    190: rll.Direction.HERE
-  };
+  this._dirKey = {};
+  this._dirKey[rll.key.H] = rll.Direction.W;
+  this._dirKey[rll.key.L] = rll.Direction.E;
+  this._dirKey[rll.key.K] = rll.Direction.N;
+  this._dirKey[rll.key.J] = rll.Direction.S;
+  this._dirKey[rll.key.Y] = rll.Direction.NW;
+  this._dirKey[rll.key.U] = rll.Direction.NE;
+  this._dirKey[rll.key.B] = rll.Direction.SW;
+  this._dirKey[rll.key.N] = rll.Direction.SE;
+  this._dirKey[rll.key.PERIOD] = rll.Direction.HERE;
 };
 
 game.Game.prototype.stage = function() {
@@ -727,12 +763,21 @@ game.Game.prototype.run = function() {
   this._display.initialize();
   document.body.appendChild(this._display.getCanvas());
   window.addEventListener('keydown', this);
+  this.newLevel();
+  this.draw();
+};
+
+game.Game.prototype.newLevel = function() {
+  var newFloor = this._stage.floor() + 1;
+  this._stage = new rll.Stage(new rll.Size(80, 21), newFloor);
   var digger = new ROT.Map.Digger(79, 20);
   var callBack = function(x, y, value) {
     if (value) { return; }
     this._stage.setTerrain(rll.Terrain.FLOOR, new rll.Point(x, y));
   };
   digger.create(callBack.bind(this));
+  this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
+      this._stage.randomWalkablePoint());
   this._player.setPoint(this._stage.randomWalkablePoint());
   this._stage.addActor(this._player);
   for (var i=0; i<3; i++) {
@@ -745,7 +790,6 @@ game.Game.prototype.run = function() {
     goblin.setAction(new rll.AI(this));
     this._stage.addActor(goblin);
   }
-  this.draw();
 };
 
 game.Game.prototype.draw = function() {
@@ -756,6 +800,7 @@ game.Game.prototype.draw = function() {
   }
   this._messages.draw(this._display);
   this._player.drawStatusLine(new rll.Point(0, 21), this._display);
+  this._display.write(new rll.Point(71, 21), 'floor:'+this._stage.floor());
 };
 
 game.Game.prototype.message = function(message) {
@@ -763,8 +808,13 @@ game.Game.prototype.message = function(message) {
 };
 
 game.Game.prototype.handleEvent = function(e) {
-  var key = e.keyCode;
-  if (key in this._dirKey) {
+  var key = e.keyCode,
+      onShift = e.shiftKey;
+  if (onShift && key === rll.key.PERIOD) {
+    if (this._stage.downableAt(this._player.point())) {
+      this.newLevel();
+    }
+  } else if (key in this._dirKey) {
     if (this.movePlayer(this._player, this._dirKey[key])) {
       this.actorsAction();
     }
@@ -788,16 +838,13 @@ game.Game.prototype.movePlayer = function(actor, direction) {
     this.attackToMonster(monster);
     return true;
   }
-  if (this._stage.walkable(actor.movedPoint(direction)) === false) {
+  if (this._stage.walkableAt(actor.movedPoint(direction)) === false) {
     return false;
   }
   actor.move(direction);
   return true;
 };
 
-// TODO Melee Attackクラスを作成
-// attaker, defender
-// isHit, damage
 game.MeleeAttack = function(attaker, defender) {
   this._attaker = attaker;
   this._defender = defender;
