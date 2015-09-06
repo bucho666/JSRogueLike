@@ -18,7 +18,8 @@ rll.key = {
   S: 83, T: 84, U: 85,
   V: 86, W: 87, X: 88,
   Y: 89, Z: 90,
-  NUMPAD0: 96,  NUMPAD1: 97,  NUMPAD3: 99,
+  NUMPAD0: 96,
+  NUMPAD1: 97,  NUMPAD2: 98, NUMPAD3: 99,
   NUMPAD4: 100, NUMPAD5: 101, NUMPAD6: 102,
   NUMPAD7: 103, NUMPAD8: 104, NUMPAD9: 105,
   MULTIPLY: 106, ADD: 107, SEPARATOR: 108,
@@ -27,7 +28,7 @@ rll.key = {
 };
 
 rll.random = function(min, max) {
-  return min + Math.floor(Math.random() * (max - min));
+  return min + Math.floor(Math.random() * (max - min + 1));
 };
 
 rll.List = function() {
@@ -39,7 +40,7 @@ rll.List = function() {
 inherit(rll.List, Array);
 
 rll.List.prototype.choice = function() {
-  var index = rll.random(0, this.length);
+  var index = rll.random(0, this.length - 1);
   return this[index];
 };
 
@@ -509,7 +510,7 @@ rll.Player.AutoHeal = function(actor) {
 };
 
 rll.Player.AutoHeal.prototype.compute = function() {
-  if (rll.random(1, 8) == 1) {
+  if (rll.random(0, 7) == 1) {
     this._actor.heal(1);
   }
 };
@@ -576,7 +577,7 @@ rll.TerrainMap.prototype.randomWalkablePoint = function() {
   h = this._terrain.length;
   w = this._terrain[0].length;
   while(true) {
-    p = new rll.Point(rll.random(0, w), rll.random(0, h));
+    p = new rll.Point(rll.random(0, w-1), rll.random(0, h-1));
     if (this.walkableAt(p)) return p;
   }
 };
@@ -776,19 +777,33 @@ rll.KeyEvent.prototype.clear = function() {
 };
 
 // TODO
-// MonsterGenerator
-// モンスターを数種類追加
-// レベルによって発生させる数を調整
-
-// TODO
 // MonsterCreator
 // モンスターの強さを変える
 // HitDiceの概念
-
-// TODO
-// テンキー対応
+// Goblin AC:6 HD:1-1 damage:1d6
+// Orc    AC:6 HD:1 damage:1d6
 
 // TODO 以上ができたら仮公開
+
+rll.Dice = function(dice) {
+  var result = /(\d+)d(\d+)([+-])(\d+)/.exec(dice);
+  if (result === null) result = /(\d+)d(\d+)/.exec(dice);
+  if (result === null) throw 'Dice: invalid arguments: ' + dice;
+  this._num = parseInt(result[1]);
+  this._faces = parseInt(result[2]);
+  this._adjust = 0;
+  if (result.length !== 5) return;
+  this._adjust = parseInt(result[4]);
+  if (result[3] === '-') this._adjust *= -1;
+};
+
+rll.Dice.prototype.roll = function() {
+  var roll = 0;
+  for (var c=0; c<this._num; c++) {
+    roll += rll.random(1, this._faces);
+  }
+  return roll + this._adjust;
+};
 
 var game = game || {};
 
@@ -811,6 +826,16 @@ game.Game.prototype._dirKey[rll.key.U] = rll.Direction.NE;
 game.Game.prototype._dirKey[rll.key.B] = rll.Direction.SW;
 game.Game.prototype._dirKey[rll.key.N] = rll.Direction.SE;
 game.Game.prototype._dirKey[rll.key.PERIOD] = rll.Direction.HERE;
+
+game.Game.prototype._dirKey[rll.key.NUMPAD4] = rll.Direction.W;
+game.Game.prototype._dirKey[rll.key.NUMPAD6] = rll.Direction.E;
+game.Game.prototype._dirKey[rll.key.NUMPAD8] = rll.Direction.N;
+game.Game.prototype._dirKey[rll.key.NUMPAD2] = rll.Direction.S;
+game.Game.prototype._dirKey[rll.key.NUMPAD7] = rll.Direction.NW;
+game.Game.prototype._dirKey[rll.key.NUMPAD9] = rll.Direction.NE;
+game.Game.prototype._dirKey[rll.key.NUMPAD1] = rll.Direction.SW;
+game.Game.prototype._dirKey[rll.key.NUMPAD3] = rll.Direction.SE;
+game.Game.prototype._dirKey[rll.key.NUMPAD5] = rll.Direction.HERE;
 
 game.Game.prototype.stage = function() {
   return this._stage;
@@ -841,15 +866,19 @@ game.Game.prototype.newLevel = function() {
       this._stage.randomWalkablePoint());
   this._player.setPoint(this._stage.randomWalkablePoint());
   this._stage.addActor(this._player);
-  for (var i=0; i<3; i++) {
-    var orc = new rll.Actor(new rll.Character('o', '#0f0'), 'オーク');
-    orc.setPoint(this._stage.randomWalkablePoint());
-    orc.setAction(new rll.AI(this));
-    this._stage.addActor(orc);
-    var goblin = new rll.Actor(new rll.Character('g', '#66f'), 'ゴブリン');
-    goblin.setPoint(this._stage.randomWalkablePoint());
-    goblin.setAction(new rll.AI(this));
-    this._stage.addActor(goblin);
+  var monsterNum = 2 + parseInt(this._stage.floor() / 3);
+  for (var i=0; i<monsterNum; i++) {
+    if (rll.random(0, 1) == 1) {
+      var orc = new rll.Actor(new rll.Character('o', '#0f0'), 'オーク');
+      orc.setPoint(this._stage.randomWalkablePoint());
+      orc.setAction(new rll.AI(this));
+      this._stage.addActor(orc);
+    } else {
+      var goblin = new rll.Actor(new rll.Character('g', '#66f'), 'ゴブリン');
+      goblin.setPoint(this._stage.randomWalkablePoint());
+      goblin.setAction(new rll.AI(this));
+      this._stage.addActor(goblin);
+    }
   }
 };
 
@@ -910,18 +939,31 @@ game.Game.prototype.movePlayer = function(actor, direction) {
   return true;
 };
 
+game.Game.prototype.attackToMonster = function(monster) {
+  var attack = new game.MeleeAttack(this._player, monster);
+  if (attack.isHit() === false) {
+    this.message(monster.name() + 'にかわされた!');
+    return;
+  }
+  var damage = attack.damage();
+  this.message(monster.name() + 'に命中 ' + damage + 'のダメージ!');
+  if (monster.isDead() === false) return;
+  this.message(monster.name() + 'をたおした!!');
+  this._stage.removeActor(monster);
+};
+
 game.MeleeAttack = function(attaker, defender) {
   this._attaker = attaker;
   this._defender = defender;
 };
 
 game.MeleeAttack.prototype.isHit = function() {
-  var rolls = rll.random(1, 21);
+  var rolls = rll.random(1, 20);
   return rolls < (this._defender.AC() - this._attaker.toHit());
 };
 
 game.MeleeAttack.prototype.damage = function() {
-  var damagePoint = rll.random(1, 9);
+  var damagePoint = rll.random(1, 8);
   this._defender.damage(damagePoint);
   return damagePoint;
 };
@@ -939,19 +981,6 @@ game.More.prototype.handleEvent = function(e) {
   if (this._messages.isEmpty()) {
     game.keyEvent.set(this._beforeEvent);
   }
-};
-
-game.Game.prototype.attackToMonster = function(monster) {
-  var attack = new game.MeleeAttack(this._player, monster);
-  if (attack.isHit() === false) {
-    this.message(monster.name() + 'にかわされた!');
-    return;
-  }
-  var damage = attack.damage();
-  this.message(monster.name() + 'に命中 ' + damage + 'のダメージ!');
-  if (monster.isDead() === false) return;
-  this.message(monster.name() + 'をたおした!!');
-  this._stage.removeActor(monster);
 };
 
 (function() {
