@@ -16,7 +16,12 @@ rll.key = {
   P: 80, Q: 81, R: 82,
   S: 83, T: 84, U: 85,
   V: 86, W: 87, X: 88,
-  Y: 89,
+  Y: 89, Z: 90,
+  NUMPAD0: 96,  NUMPAD1: 97,  NUMPAD3: 99,
+  NUMPAD4: 100, NUMPAD5: 101, NUMPAD6: 102,
+  NUMPAD7: 103, NUMPAD8: 104, NUMPAD9: 105,
+  MULTIPLY: 106, ADD: 107, SEPARATOR: 108,
+  SUBTRACT: 109, DECIMAL: 110, DIVIDE: 111,
   PERIOD: 190
 };
 
@@ -732,24 +737,67 @@ rll.Messages.prototype.draw = function(display) {
   this._messages = '';
 };
 
+rll.KeyEvent = function() {
+  this._current = null;
+};
+
+rll.KeyEvent.prototype.set = function(newEvent) {
+  this._current = newEvent;
+  window.addEventListener('keydown', newEvent);
+};
+
+rll.KeyEvent.prototype.current = function() {
+  return this._current;
+};
+
+rll.KeyEvent.prototype.clear = function() {
+  window.removeEventListener('keydown', this._current);
+};
+
+
+// TODO
+// キーイベントクラス
+// keydownイベントの登録、保持
+// 登録時に現行のイベントを保持して戻せるようにする。
+// これを使って-- more -- を実装する。
+// まずは一行ずつ。
+
+// TODO
+// MonsterGenerator
+// モンスターを数種類追加
+// レベルによって発生させる数を調整
+
+// TODO
+// MonsterCreator
+// モンスターの強さを変える
+// HitDiceの概念
+
+// TODO
+// テンキー対応
+
+// TODO 以上ができたら仮公開
+
 var game = game || {};
+
+game.keyEvent = new rll.KeyEvent();
 
 game.Game = function() {
   this._display = new rll.Display();
-  this._player  = new rll.Player(new rll.Character('@', '#880'), 'player');
+  this._player  = new rll.Player(new rll.Character('@', '#fff'), 'player');
   this._stage   = new rll.Stage(new rll.Size(80, 21), 0);
   this._messages = new rll.Messages();
-  this._dirKey = {};
-  this._dirKey[rll.key.H] = rll.Direction.W;
-  this._dirKey[rll.key.L] = rll.Direction.E;
-  this._dirKey[rll.key.K] = rll.Direction.N;
-  this._dirKey[rll.key.J] = rll.Direction.S;
-  this._dirKey[rll.key.Y] = rll.Direction.NW;
-  this._dirKey[rll.key.U] = rll.Direction.NE;
-  this._dirKey[rll.key.B] = rll.Direction.SW;
-  this._dirKey[rll.key.N] = rll.Direction.SE;
-  this._dirKey[rll.key.PERIOD] = rll.Direction.HERE;
 };
+
+game.Game.prototype._dirKey = {};
+game.Game.prototype._dirKey[rll.key.H] = rll.Direction.W;
+game.Game.prototype._dirKey[rll.key.L] = rll.Direction.E;
+game.Game.prototype._dirKey[rll.key.K] = rll.Direction.N;
+game.Game.prototype._dirKey[rll.key.J] = rll.Direction.S;
+game.Game.prototype._dirKey[rll.key.Y] = rll.Direction.NW;
+game.Game.prototype._dirKey[rll.key.U] = rll.Direction.NE;
+game.Game.prototype._dirKey[rll.key.B] = rll.Direction.SW;
+game.Game.prototype._dirKey[rll.key.N] = rll.Direction.SE;
+game.Game.prototype._dirKey[rll.key.PERIOD] = rll.Direction.HERE;
 
 game.Game.prototype.stage = function() {
   return this._stage;
@@ -762,7 +810,7 @@ game.Game.prototype.player = function() {
 game.Game.prototype.run = function() {
   this._display.initialize();
   document.body.appendChild(this._display.getCanvas());
-  window.addEventListener('keydown', this);
+  game.keyEvent.set(this);
   this.newLevel();
   this.draw();
 };
@@ -875,7 +923,7 @@ game.Game.prototype.attackToMonster = function(monster) {
 };
 
 game.Game.prototype.over = function() {
-  window.removeEventListener('keydown', this);
+  game.keyEvent.clear();
 };
 
 (function() {
