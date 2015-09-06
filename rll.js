@@ -8,6 +8,7 @@ var inherit = function(child, parent) {
 var rll = rll || {};
 
 rll.key = {
+  SPACE: 32,
   A: 65, B: 66, C: 67,
   D: 68, E: 69, F: 70,
   G: 71, H: 72, I: 73,
@@ -680,7 +681,6 @@ rll.AI.prototype.attackToPlayer = function(actor, player) {
   this._game.message(actor.name() + 'の攻撃が命中 ' + damage + 'のダメージ!!');
   if (player.isDead() === false) return;
   this._game.message('あなたは死んだ…');
-  this._game.over();
 };
 
 rll.AI.prototype.canSee = function(actor, point) {
@@ -720,21 +720,41 @@ rll.AI.prototype.randomMove = function(actor) {
 };
 
 rll.Messages = function() {
-  this._messages = '';
+  this._messages = [];
+  this._current = '';
 };
 
 rll.Messages.prototype.add = function(message) {
-  if (this._messages.length > 0) {
-    message = ' ' + message;
+  var width = 0,
+      start = 0,
+      i;
+  this._current += message;
+  for (i=0; i<this._current.length; i++) {
+    cc = new rll.CharacterCode(this._current.charCodeAt(i));
+    width += cc.isWide() ? 2 : 1;
+    if (width >= 70) {
+      this._messages.push(this._current.slice(start, i));
+      start = i;
+      width = 0;
+    }
   }
-  this._messages += message;
+  this._current = this._current.slice(start, i);
 };
 
 rll.Messages.prototype.draw = function(display) {
-  if (this._messages.length === 0) return;
+  if (this._current.length > 0) {
+    this._messages.push(this._current);
+    this._current = '';
+  }
+  if (this.isEmpty()) return;
+  var message = this._messages.shift();
+  if (this.isEmpty() === false) message += ' -- more --';
   display.clearLine(0);
-  display.write(new rll.Point(0, 0), this._messages, '#ccc');
-  this._messages = '';
+  display.write(new rll.Point(0, 0), message, '#ccc');
+};
+
+rll.Messages.prototype.isEmpty = function() {
+  return this._messages.length === 0;
 };
 
 rll.KeyEvent = function() {
@@ -742,8 +762,9 @@ rll.KeyEvent = function() {
 };
 
 rll.KeyEvent.prototype.set = function(newEvent) {
-  this._current = newEvent;
+  this.clear();
   window.addEventListener('keydown', newEvent);
+  this._current = newEvent;
 };
 
 rll.KeyEvent.prototype.current = function() {
@@ -753,14 +774,6 @@ rll.KeyEvent.prototype.current = function() {
 rll.KeyEvent.prototype.clear = function() {
   window.removeEventListener('keydown', this._current);
 };
-
-
-// TODO
-// キーイベントクラス
-// keydownイベントの登録、保持
-// 登録時に現行のイベントを保持して戻せるようにする。
-// これを使って-- more -- を実装する。
-// まずは一行ずつ。
 
 // TODO
 // MonsterGenerator
@@ -846,9 +859,12 @@ game.Game.prototype.draw = function() {
       this._stage.draw(new rll.Point(x, y), this._display);
     }
   }
-  this._messages.draw(this._display);
   this._player.drawStatusLine(new rll.Point(0, 21), this._display);
   this._display.write(new rll.Point(71, 21), 'floor:'+this._stage.floor());
+  this._messages.draw(this._display);
+  if (this._messages.isEmpty() === false) {
+    new game.More(this._messages, this._display);
+  }
 };
 
 game.Game.prototype.message = function(message) {
@@ -856,6 +872,7 @@ game.Game.prototype.message = function(message) {
 };
 
 game.Game.prototype.handleEvent = function(e) {
+  if (this._player.isDead()) return;
   var key = e.keyCode,
       onShift = e.shiftKey;
   if (onShift && key === rll.key.PERIOD) {
@@ -909,6 +926,21 @@ game.MeleeAttack.prototype.damage = function() {
   return damagePoint;
 };
 
+game.More = function(messages, display) {
+  this._messages = messages;
+  this._display = display;
+  this._beforeEvent = game.keyEvent.current();
+  game.keyEvent.set(this);
+};
+
+game.More.prototype.handleEvent = function(e) {
+  if (e.keyCode != rll.key.SPACE) return;
+  this._messages.draw(this._display);
+  if (this._messages.isEmpty()) {
+    game.keyEvent.set(this._beforeEvent);
+  }
+};
+
 game.Game.prototype.attackToMonster = function(monster) {
   var attack = new game.MeleeAttack(this._player, monster);
   if (attack.isHit() === false) {
@@ -920,10 +952,6 @@ game.Game.prototype.attackToMonster = function(monster) {
   if (monster.isDead() === false) return;
   this.message(monster.name() + 'をたおした!!');
   this._stage.removeActor(monster);
-};
-
-game.Game.prototype.over = function() {
-  game.keyEvent.clear();
 };
 
 (function() {
