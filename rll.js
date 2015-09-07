@@ -413,20 +413,19 @@ rll.State.prototype.toString = function() {
 
 rll.Actor = function(character, name) {
   this._point = new rll.Point(0, 0);
-  this._character = character;
   this._action = { compute: function(){} };
-  this._name = name;
   this._hp = new rll.State(8);
-  this._level = 1;
-  this._AC = 8;
-};
-
-rll.Actor.prototype.setHP = function(hp) {
-  this._hp = new rll.State(hp);
+  this._character = character;
+  this._name = name;
+  this._armorClass = 8;
 };
 
 rll.Actor.prototype.damage = function(damage) {
   this._hp.add(-damage);
+};
+
+rll.Actor.prototype.attackDamage = function() {
+  return rll.random(1, 8);
 };
 
 rll.Actor.prototype.heal = function(hp) {
@@ -487,23 +486,43 @@ rll.Actor.prototype.isNextTo = function(point) {
   return this._point.isNextTo(point);
 };
 
-rll.Actor.prototype.drawStatusLine = function(point, display) {
-  display.write(point, 'hp:' + this._hp);
-};
-
 rll.Actor.prototype.toHit = function() {
-  return this._level;
+  return 1;
 };
 
-rll.Actor.prototype.AC = function() {
-  return this._AC;
+rll.Actor.prototype.armorClass = function() {
+  return this._armorClass;
+};
+
+rll.Monster = function(config) {
+  var ch = new rll.Character(config.glyph, config.color);
+  rll.Actor.call(this, ch, config.name);
+  this._hitDice = new rll.Dice(config.hitDice);
+  this._hp = new rll.State(this._hitDice.roll());
+  this._armorClass = config.armorClass;
+  this._damage = new rll.Dice(config.damage);
+};
+
+inherit(rll.Monster, rll.Actor);
+
+rll.Monster.prototype.attackDamage = function() {
+  return this._damage.roll();
+};
+
+rll.Monster.prototype.toHit = function() {
+  return this._hitDice.number();
 };
 
 rll.Player = function(character, name) {
   rll.Actor.call(this, character, name);
+  this._level = 1;
   this.setAction(new rll.Player.AutoHeal(this));
 };
 inherit(rll.Player, rll.Actor);
+
+rll.Player.prototype.toHit = function() {
+  return this._level;
+};
 
 rll.Player.AutoHeal = function(actor) {
   this._actor = actor;
@@ -513,6 +532,10 @@ rll.Player.AutoHeal.prototype.compute = function() {
   if (rll.random(0, 7) == 1) {
     this._actor.heal(1);
   }
+};
+
+rll.Player.prototype.drawStatusLine = function(point, display) {
+  display.write(point, 'hp:' + this._hp);
 };
 
 rll.Terrain = function(property) {
@@ -776,21 +799,12 @@ rll.KeyEvent.prototype.clear = function() {
   window.removeEventListener('keydown', this._current);
 };
 
-// TODO
-// MonsterCreator
-// モンスターの強さを変える
-// HitDiceの概念
-// Goblin AC:6 HD:1-1 damage:1d6
-// Orc    AC:6 HD:1 damage:1d6
-
-// TODO 以上ができたら仮公開
-
 rll.Dice = function(dice) {
   var result = /(\d+)d(\d+)([+-])(\d+)/.exec(dice);
   if (result === null) result = /(\d+)d(\d+)/.exec(dice);
   if (result === null) throw 'Dice: invalid arguments: ' + dice;
   this._num = parseInt(result[1]);
-  this._faces = parseInt(result[2]);
+  this._sided = parseInt(result[2]);
   this._adjust = 0;
   if (result.length !== 5) return;
   this._adjust = parseInt(result[4]);
@@ -800,9 +814,14 @@ rll.Dice = function(dice) {
 rll.Dice.prototype.roll = function() {
   var roll = 0;
   for (var c=0; c<this._num; c++) {
-    roll += rll.random(1, this._faces);
+    roll += rll.random(1, this._sided);
   }
-  return roll + this._adjust;
+  roll += this._adjust;
+  return (roll < 1) ? 1 : roll;
+};
+
+rll.Dice.prototype.number = function() {
+  return parseInt(this._num);
 };
 
 var game = game || {};
@@ -868,17 +887,41 @@ game.Game.prototype.newLevel = function() {
   this._stage.addActor(this._player);
   var monsterNum = 2 + parseInt(this._stage.floor() / 3);
   for (var i=0; i<monsterNum; i++) {
-    if (rll.random(0, 1) == 1) {
-      var orc = new rll.Actor(new rll.Character('o', '#0f0'), 'オーク');
-      orc.setPoint(this._stage.randomWalkablePoint());
-      orc.setAction(new rll.AI(this));
-      this._stage.addActor(orc);
-    } else {
-      var goblin = new rll.Actor(new rll.Character('g', '#66f'), 'ゴブリン');
-      goblin.setPoint(this._stage.randomWalkablePoint());
-      goblin.setAction(new rll.AI(this));
-      this._stage.addActor(goblin);
+    var m;
+    switch(rll.random(0, 3)) {
+    case 0:
+      m = new rll.Monster({
+        name      :'オーク',
+        glyph     :'o',
+        color     :'#0f0',
+        hitDice   :'1d8',
+        damage    :'1d6',
+        armorClass:6,
+      });
+      break;
+    case 1:
+      m = new rll.Monster({
+        name      :'ゴブリン',
+        glyph     :'g',
+        color     :'#66f',
+        hitDice   :'1d8',
+        damage    :'1d6',
+        armorClass:6,
+      });
+      break;
+    default:
+      m = new rll.Monster({
+        name      :'スケルトン',
+        glyph     :'s',
+        color     :'#ccc',
+        hitDice   :'1d8',
+        damage    :'1d6',
+        armorClass:7,
+      });
     }
+    m.setPoint(this._stage.randomWalkablePoint());
+    m.setAction(new rll.AI(this));
+    this._stage.addActor(m);
   }
 };
 
@@ -959,11 +1002,13 @@ game.MeleeAttack = function(attaker, defender) {
 
 game.MeleeAttack.prototype.isHit = function() {
   var rolls = rll.random(1, 20);
-  return rolls < (this._defender.AC() - this._attaker.toHit());
+  if (rolls === 20) return true;
+  if (rolls === 1 ) return false;
+  return rolls < (this._defender.armorClass() + this._attaker.toHit());
 };
 
 game.MeleeAttack.prototype.damage = function() {
-  var damagePoint = rll.random(1, 8);
+  var damagePoint = this._attaker.attackDamage();
   this._defender.damage(damagePoint);
   return damagePoint;
 };
