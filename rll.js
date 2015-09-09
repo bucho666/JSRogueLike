@@ -411,14 +411,29 @@ rll.State.prototype.toString = function() {
   return this._current + '(' + this._max + ')';
 };
 
+rll.Entity = function(character, name) {
+  this._character = character;
+  this._name = name;
+};
+
+rll.Entity.prototype.name = function() {
+  return this._name;
+};
+
+rll.Entity.prototype.draw = function(display, point) {
+  display.write(point, this._character.glyph(), this._character.color());
+};
+
+rll.Entity.BLANK = new rll.Entity(new rll.Character(' ', '#000'), 'unknown');
+
 rll.Actor = function(character, name) {
+  rll.Entity.call(this, character, name);
   this._point = new rll.Point(0, 0);
   this._action = { compute: function(){} };
   this._hp = new rll.State(8);
-  this._character = character;
-  this._name = name;
   this._armorClass = 8;
 };
+inherit(rll.Actor, rll.Entity);
 
 rll.Actor.prototype.damage = function(damage) {
   this._hp.add(-damage);
@@ -434,10 +449,6 @@ rll.Actor.prototype.heal = function(hp) {
 
 rll.Actor.prototype.isDead = function() {
   return this._hp.current() < 1;
-};
-
-rll.Actor.prototype.name = function() {
-  return this._name;
 };
 
 rll.Actor.prototype.lineTo = function(from) {
@@ -460,8 +471,9 @@ rll.Actor.prototype.action = function() {
   this._action.compute(this);
 };
 
-rll.Actor.prototype.draw = function(display) {
-  display.write(this._point,
+rll.Actor.prototype.draw = function(display, point) {
+  if (point === undefined) point = new rll.Point(0, 0);
+  display.write(this._point.add(point),
       this._character.glyph(),
       this._character.color());
 };
@@ -534,14 +546,16 @@ rll.Player.AutoHeal.prototype.compute = function() {
   }
 };
 
-rll.Player.prototype.drawStatusLine = function(point, display) {
+rll.Player.prototype.drawStatusLine = function(display, point) {
   display.write(point, 'hp:' + this._hp);
 };
 
 rll.Terrain = function(property) {
+  rll.Entity.call(this, property.character, property.name);
   this._character = new rll.Character(property.character, property.color);
   this._walkable = property.walkable;
 };
+inherit(rll.Terrain, rll.Entity);
 
 rll.Terrain.FLOOR = new rll.Terrain({
   character: '.',
@@ -561,11 +575,6 @@ rll.Terrain.DOWN_STAIRS = new rll.Terrain({
   walkable: true,
   });
 
-
-rll.Terrain.prototype.draw = function(point, display) {
-  display.write(point, this._character.glyph(), this._character.color());
-};
-
 rll.Terrain.prototype.walkable = function() {
   return this._walkable;
 };
@@ -580,12 +589,16 @@ rll.TerrainMap = function(size) {
   }
 };
 
-rll.TerrainMap.prototype.draw = function(point, display) {
-  this._terrain[point.y()][point.x()].draw(point, display);
+rll.TerrainMap.prototype.get = function(point) {
+  return this._terrain[point.y()][point.x()];
 };
 
 rll.TerrainMap.prototype.set = function(new_terrain, point) {
   this._terrain[point.y()][point.x()] = new_terrain;
+};
+
+rll.TerrainMap.prototype.draw = function(display, point) {
+  this._terrain[point.y()][point.x()].draw(display, point);
 };
 
 rll.TerrainMap.prototype.walkableAt = function(point) {
@@ -609,6 +622,10 @@ rll.Stage = function(size, floor) {
   this._terrain = new rll.TerrainMap(size);
   this._actors = new rll.List();
   this._floor = floor;
+};
+
+rll.Stage.prototype.terrain = function(point) {
+  return this._terrain.get(point);
 };
 
 rll.Stage.prototype.floor = function() {
@@ -645,12 +662,12 @@ rll.Stage.prototype.find = function(callback) {
   return this._actors.find(callback);
 };
 
-rll.Stage.prototype.draw = function(point, display) {
+rll.Stage.prototype.draw = function(display, point) {
   var a = this.findActor(point);
   if (a) {
     a.draw(display);
   } else {
-    this._terrain.draw(point, display);
+    this._terrain.draw(display, point);
   }
 };
 
@@ -824,6 +841,38 @@ rll.Dice.prototype.number = function() {
   return parseInt(this._num);
 };
 
+rll.Sight = function(player, size) {
+  this._player = player;
+  this._memory = [];
+  for (var y=0, h=size.height(); y<h; y++) {
+    this._memory[y] = [];
+    for (var x=0, w=size.width(); x<w; x++) {
+      this._memory[y][x] = rll.Entity.BLANK;
+    }
+  }
+};
+
+rll.Sight.prototype.setMemory = function(entity, point) {
+  this._memory[point.y()][point.x()] = entity;
+};
+
+// TODO method of player?
+rll.Sight.prototype.draw = function(stage, display) {
+  for (var y=0; y < this._memory.length; y++) {
+    for (var x=0; x < this._memory[y].length; x++) {
+      this._memory[y][x].draw(display, new rll.Point(x, y));
+    }
+  }
+  var pp = this._player.point();
+  for (var i=0; i<rll.Direction.AROUND.length; i++) {
+    var p = pp.add(rll.Direction.AROUND[i]);
+    stage.draw(display, p);
+    this.setMemory(stage.terrain(p), p);
+  }
+  stage.draw(display, pp);
+  this.setMemory(stage.terrain(pp), pp);
+};
+
 var game = game || {};
 
 game.keyEvent = new rll.KeyEvent();
@@ -831,6 +880,7 @@ game.keyEvent = new rll.KeyEvent();
 game.Game = function() {
   this._display = new rll.Display();
   this._player  = new rll.Player(new rll.Character('@', '#fff'), 'player');
+  this._sight   = new rll.Sight(this._player, new rll.Size(80, 21));
   this._stage   = new rll.Stage(new rll.Size(80, 21), 0);
   this._messages = new rll.Messages();
 };
@@ -926,12 +976,8 @@ game.Game.prototype.newLevel = function() {
 };
 
 game.Game.prototype.draw = function() {
-  for (var y=0; y<21; y++) {
-    for (var x=0; x<80; x++) {
-      this._stage.draw(new rll.Point(x, y), this._display);
-    }
-  }
-  this._player.drawStatusLine(new rll.Point(0, 21), this._display);
+  this._sight.draw(this._stage, this._display);
+  this._player.drawStatusLine(this._display, new rll.Point(0, 21));
   this._display.write(new rll.Point(71, 21), 'floor:'+this._stage.floor());
   this._messages.draw(this._display);
   if (this._messages.isEmpty() === false) {
