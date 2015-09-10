@@ -231,6 +231,7 @@ rll.Size.prototype.multiply = function(other) {
 rll.Character = function(glyph, color) {
   this._glyph = glyph;
   this._color = color;
+  this._dark = null;
 };
 
 rll.Character.prototype.glyph = function() {
@@ -253,6 +254,21 @@ rll.Character.prototype.code = function() {
 rll.Character.prototype.draw = function(point, display) {
   display.fillStyle = this._color;
   display.fillText(this._glyph, point.x(), point.y());
+};
+
+rll.Character.prototype.darkMask = parseInt('00f', 16);
+rll.Character.prototype.dark = function() {
+  if (this._dark) return this._dark;
+  var n = parseInt(this._color.substr(1), 16);
+  var r = (n >> 8 & this.darkMask);
+  var g = (n >> 4 & this.darkMask);
+  var b = (n & this.darkMask);
+  r = Math.floor(r / 2);
+  g = Math.floor(g / 2);
+  b = Math.floor(b / 2);
+  var darkColor = '#' + r.toString(16) + g.toString(16)+ b.toString(16);
+  this._dark = new rll.Character(this._glyph, darkColor);
+  return this._dark;
 };
 
 rll.CharacterCode = function(code) {
@@ -424,6 +440,10 @@ rll.Entity.prototype.draw = function(display, point) {
   display.write(point, this._character.glyph(), this._character.color());
 };
 
+rll.Entity.prototype.dark = function() {
+  return new rll.Entity(this._character.dark(), this._name);
+};
+
 rll.Entity.BLANK = new rll.Entity(new rll.Character(' ', '#000'), 'unknown');
 
 rll.Actor = function(character, name) {
@@ -551,15 +571,15 @@ rll.Player.prototype.drawStatusLine = function(display, point) {
 };
 
 rll.Terrain = function(property) {
-  rll.Entity.call(this, property.character, property.name);
-  this._character = new rll.Character(property.character, property.color);
+  var ch = new rll.Character(property.character, property.color);
+  rll.Entity.call(this, ch, property.name);
   this._walkable = property.walkable;
 };
 inherit(rll.Terrain, rll.Entity);
 
 rll.Terrain.FLOOR = new rll.Terrain({
   character: '.',
-  color:'#ccc',
+  color: '#ccc',
   walkable: true,
   });
 
@@ -853,7 +873,7 @@ rll.Sight = function(player, size) {
 };
 
 rll.Sight.prototype.setMemory = function(entity, point) {
-  this._memory[point.y()][point.x()] = entity;
+  this._memory[point.y()][point.x()] = entity.dark();
 };
 
 // TODO method of player?
