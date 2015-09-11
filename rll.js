@@ -305,7 +305,7 @@ rll.Grid.prototype.draw = function(context) {
   var cc = new rll.CharacterCode(this._character.code());
   if (cc.isWide()) w *= 2;
   context.fillStyle = rll.Grid._backGroundColor;
-  context.fillRect(x, y, w, h);
+  context.fillRect(x, y-2, w, h); // TODO
   context.fillStyle = this._character.color();
   context.fillText(this._character.glyph(), x, y);
 };
@@ -465,6 +465,10 @@ rll.Actor.prototype.attackDamage = function() {
 
 rll.Actor.prototype.heal = function(hp) {
   this._hp.add(hp);
+};
+
+rll.Actor.prototype.isAlive = function() {
+  return this._hp.current() > 0;
 };
 
 rll.Actor.prototype.isDead = function() {
@@ -718,7 +722,7 @@ rll.AI.prototype.compute = function(actor) {
   if (this._lastDest && actor.on(this._lastDest)) {
     this._lastDest = null;
   }
-  if (actor.isNextTo(playerPoint)) {
+  if (actor.isNextTo(playerPoint) && player.isAlive()) {
     this.attackToPlayer(actor, player);
     return;
   }
@@ -810,8 +814,8 @@ rll.Messages.prototype.draw = function(display) {
   if (this.isEmpty()) return;
   var message = this._messages.shift();
   if (this.isEmpty() === false) message += ' -- more --';
-  display.clearLine(0);
-  display.write(new rll.Point(0, 0), message, '#ccc');
+  display.clearLine(20);
+  display.write(new rll.Point(0, 20), message, '#ccc');
 };
 
 rll.Messages.prototype.isEmpty = function() {
