@@ -1,3 +1,4 @@
+/*global rll, document, window*/
 rll.Font = function(family, size) {
   this._fontFamily = family;
   this._fontSize = size;

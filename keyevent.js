@@ -1,3 +1,4 @@
+/*global rll, window*/
 rll.KeyEvent = function() {
   this._current = null;
 };

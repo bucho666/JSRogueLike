@@ -1,3 +1,4 @@
+/*global rll*/
 rll.Messages = function() {
   this._messages = [];
   this._current = '';
@@ -6,7 +7,7 @@ rll.Messages = function() {
 rll.Messages.prototype.add = function(message) {
   var width = 0,
       start = 0,
-      i;
+      i, cc;
   this._current += message;
   for (i=0; i<this._current.length; i++) {
     cc = new rll.CharacterCode(this._current.charCodeAt(i));

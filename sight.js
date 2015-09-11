@@ -1,3 +1,4 @@
+/*global rll*/
 rll.Sight = function(player, size) {
   this._player = player;
   this._memory = [];
@@ -72,8 +73,7 @@ rll.View.Scanner.prototype._scanLine = function(y) {
   var bloking = false,
       startX = Math.round(y * this._startSlope),
       endX = Math.round(y * this._endSlope),
-      absPoint,
-      blockLight;
+      absPoint, passLight, schanner;
   if (startX > endX) return false;
   for (var x=startX; x<=endX; x++) {
     if (x*x + y*y > this._radius * this._radius) break;

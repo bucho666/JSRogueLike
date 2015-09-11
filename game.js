@@ -1,3 +1,4 @@
+/*global rll, document, ROT*/
 var game = game || {};
 
 game.keyEvent = new rll.KeyEvent();
@@ -117,7 +118,7 @@ game.Game.prototype.draw = function() {
   this._display.write(new rll.Point(71, 21), 'floor:'+this._stage.floor());
   this._messages.draw(this._display);
   if (this._messages.isEmpty() === false) {
-    new game.More(this._messages, this._display);
+    (new game.More(this._messages, this._display)).execute();
   }
 };
 
@@ -199,6 +200,9 @@ game.More = function(messages, display) {
   this._messages = messages;
   this._display = display;
   this._beforeEvent = game.keyEvent.current();
+};
+
+game.More.prototype.execute = function() {
   game.keyEvent.set(this);
 };
 

@@ -1,3 +1,4 @@
+/* global rll, inherit*/
 rll.State = function(value) {
   this._current = value;
   this._max = value;
@@ -15,7 +16,7 @@ rll.State.prototype.add = function(value) {
 };
 
 rll.State.prototype.addMax = function(value) {
-  this._max += max;
+  this._max += value;
 };
 
 rll.State.prototype.toString = function() {

@@ -1,3 +1,4 @@
+/*global rll*/
 rll.TerrainMap = function(size) {
   this._terrain = [];
   for (var y=0, h=size.height(); y<h; y++) {
@@ -29,10 +30,10 @@ rll.TerrainMap.prototype.downableAt= function(point) {
 };
 
 rll.TerrainMap.prototype.randomWalkablePoint = function() {
-  h = this._terrain.length;
-  w = this._terrain[0].length;
+  var h = this._terrain.length;
+  var w = this._terrain[0].length;
   while(true) {
-    p = new rll.Point(rll.random(0, w-1), rll.random(0, h-1));
+    var p = new rll.Point(rll.random(0, w-1), rll.random(0, h-1));
     if (this.walkableAt(p)) return p;
   }
 };

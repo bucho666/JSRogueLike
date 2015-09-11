@@ -1,3 +1,4 @@
+/*global rll, inherit*/
 rll.Terrain = function(property) {
   var ch = new rll.Character(property.character, property.color);
   rll.Entity.call(this, ch, property.name);

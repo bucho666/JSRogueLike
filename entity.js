@@ -1,3 +1,4 @@
+/*global rll*/
 rll.Entity = function(character, name) {
   this._character = character;
   this._name = name;

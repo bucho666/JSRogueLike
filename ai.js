@@ -1,10 +1,10 @@
-rll.AI = function(game) {
+/* global rll, game*/
+game.AI = function(game) {
   this._game = game;
   this._lastDest = null;
 };
 
-rll.AI.prototype.compute = function(actor) {
-  var stage = this._game.stage();
+game.AI.prototype.compute = function(actor) {
   var player = this._game.player();
   var playerPoint = player.point();
   if (this._lastDest && actor.on(this._lastDest)) {
@@ -24,8 +24,8 @@ rll.AI.prototype.compute = function(actor) {
   }
 };
 
-rll.AI.prototype.attackToPlayer = function(actor, player) {
-  var attack = new game.MeleeAttack(actor, player);
+game.AI.prototype.attackToPlayer = function(actor, player) {
+  var attack = new game.MeleeAttack(actor, player); // TODO game
   if (attack.isHit() === false) {
     this._game.message(actor.name() + 'の攻撃をかわした!');
     return;
@@ -36,7 +36,7 @@ rll.AI.prototype.attackToPlayer = function(actor, player) {
   this._game.message('あなたは死んだ…');
 };
 
-rll.AI.prototype.canSee = function(actor, point) {
+game.AI.prototype.canSee = function(actor, point) {
   var stage = this._game.stage();
   var line = actor.lineTo(point);
   for (var i=0; i<line.length; i++) {
@@ -47,7 +47,7 @@ rll.AI.prototype.canSee = function(actor, point) {
   return true;
 };
 
-rll.AI.prototype.chase = function(actor, point) {
+game.AI.prototype.chase = function(actor, point) {
   var stage = this._game.stage();
   var directions = actor.directionsTo(point);
   for (var i=0; i<directions.length; i++) {
@@ -60,7 +60,7 @@ rll.AI.prototype.chase = function(actor, point) {
   }
 };
 
-rll.AI.prototype.randomMove = function(actor) {
+game.AI.prototype.randomMove = function(actor) {
   var stage = this._game.stage();
   var directions = new rll.List();
   for (var i=0; i<rll.Direction.AROUND.length; i++) {
