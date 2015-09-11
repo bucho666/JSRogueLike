@@ -263,9 +263,9 @@ rll.Character.prototype.dark = function() {
   var r = (n >> 8 & this.darkMask);
   var g = (n >> 4 & this.darkMask);
   var b = (n & this.darkMask);
-  r = Math.floor(r / 2);
-  g = Math.floor(g / 2);
-  b = Math.floor(b / 2);
+  r = Math.floor(r * 0.8);
+  g = Math.floor(g * 0.8);
+  b = Math.floor(b * 0.8);
   var darkColor = '#' + r.toString(16) + g.toString(16)+ b.toString(16);
   this._dark = new rll.Character(this._glyph, darkColor);
   return this._dark;
@@ -579,13 +579,13 @@ inherit(rll.Terrain, rll.Entity);
 
 rll.Terrain.FLOOR = new rll.Terrain({
   character: '.',
-  color: '#ccc',
+  color: '#080',
   walkable: true,
   });
 
 rll.Terrain.WALL = new rll.Terrain({
   character: '#',
-  color:'#ccc',
+  color:'#840',
   walkable: false,
   });
 
@@ -1033,7 +1033,7 @@ game.Game.prototype.newLevel = function() {
   var monsterNum = 2 + parseInt(this._stage.floor() / 3);
   for (var i=0; i<monsterNum; i++) {
     var m;
-    switch(rll.random(0, 3)) {
+    switch(rll.random(0, 5)) {
     case 0:
       m = new rll.Monster({
         name      :'オーク',
@@ -1054,13 +1054,23 @@ game.Game.prototype.newLevel = function() {
         armorClass:6,
       });
       break;
-    default:
+    case 2:
       m = new rll.Monster({
         name      :'スケルトン',
         glyph     :'s',
         color     :'#ccc',
         hitDice   :'1d8',
         damage    :'1d6',
+        armorClass:7,
+      });
+      break;
+    default:
+      m = new rll.Monster({
+        name      :'大ねずみ',
+        glyph     :'r',
+        color     :'#820',
+        hitDice   :'1d4',
+        damage    :'1d3',
         armorClass:7,
       });
     }
