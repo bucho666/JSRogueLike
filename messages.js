@@ -28,8 +28,8 @@ rll.Messages.prototype.draw = function(display) {
   if (this.isEmpty()) return;
   var message = this._messages.shift();
   if (this.isEmpty() === false) message += ' -- more --';
-  display.clearLine(0);
-  display.write(new rll.Point(0, 0), message, '#ccc');
+  display.clearLine(20);
+  display.write(new rll.Point(0, 20), message, '#ccc');
 };
 
 rll.Messages.prototype.isEmpty = function() {

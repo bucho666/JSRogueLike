@@ -86,16 +86,18 @@ rll.Grid.prototype.draw = function(context) {
   var x = this._point.x() * w;
   var y = this._point.y() * h;
   var cc = new rll.CharacterCode(this._character.code());
-  if (cc.isWide()) w *= 2;
+  var isWide = cc.isWide();
+  if (isWide) w *= 2;
   context.fillStyle = rll.Grid._backGroundColor;
-  context.fillRect(x, y, w, h); // TODO
+  context.fillRect(x, y, w, h);
   context.fillStyle = this._character.color();
+  if (isWide) y += 1;
   context.fillText(this._character.glyph(), x, y);
 };
 
 rll.Display = function() {
   this._context = null;
-  this._font = new rll.Font('Courier New', 15);
+  this._font = new rll.Font('Courier New, Osaka', 15);
   this._size = new rll.Size(80, 25);
   this._grids = {};
   this._dirty = {};
