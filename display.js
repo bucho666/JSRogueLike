@@ -147,18 +147,16 @@ rll.Display.prototype.write = function(point, string, color) {
 };
 
 rll.Display.prototype._clearCache = function(point) {
-  var key = point.toString();
-  if (key in this._dirty) delete this._dirty[key];
-  if (key in this._grids) delete this._grids[key];
+  if (point in this._dirty) delete this._dirty[point];
+  if (point in this._grids) delete this._grids[point];
 };
 
 rll.Display.prototype._write = function(point, glyph, color) {
-  var key = point.toString();
   var grid = new rll.Grid(point, new rll.Character(glyph, color));
-  if (key in this._dirty && this._dirty[key].equal(grid)) {
+  if (point in this._dirty && this._dirty[point].equal(grid)) {
     return;
   }
-  this._dirty[key] = grid;
+  this._dirty[point] = grid;
 };
 
 rll.Display.prototype.flush = function() {
