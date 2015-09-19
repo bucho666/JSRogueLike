@@ -105,6 +105,11 @@ game.Game.prototype._dirKey[rll.key.NUMPAD1] = rll.Direction.SW;
 game.Game.prototype._dirKey[rll.key.NUMPAD3] = rll.Direction.SE;
 game.Game.prototype._dirKey[rll.key.NUMPAD5] = rll.Direction.HERE;
 
+game.Game.prototype._dirKey[rll.key.LEFT] = rll.Direction.W;
+game.Game.prototype._dirKey[rll.key.RIGHT] = rll.Direction.E;
+game.Game.prototype._dirKey[rll.key.UP] = rll.Direction.N;
+game.Game.prototype._dirKey[rll.key.DOWN] = rll.Direction.S;
+
 game.Game.prototype.stage = function() {
   return this._stage;
 };
