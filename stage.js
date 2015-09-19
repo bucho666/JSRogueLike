@@ -40,7 +40,7 @@ rll.TerrainMap.prototype.randomWalkablePoint = function() {
 
 rll.Stage = function(size, floor) {
   this._terrain = new rll.TerrainMap(size);
-  this._actors = new rll.List();
+  this._actors = [];
   this._floor = floor;
 };
 

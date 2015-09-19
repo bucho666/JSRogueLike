@@ -1,4 +1,4 @@
-/*global rll, document, ROT*/
+/*global rll, document*/
 var game = game || {};
 
 game.keyEvent = new rll.KeyEvent();
@@ -66,14 +66,14 @@ game.AI.prototype.chase = function(actor, point) {
 
 game.AI.prototype.randomMove = function(actor) {
   var stage = this._game.stage();
-  var directions = new rll.List();
+  var directions = [];
   for (var i=0; i<rll.Direction.AROUND.length; i++) {
     var dir = rll.Direction.AROUND[i];
     if (stage.walkableAt(actor.movedPoint(dir))) {
       directions.push(dir);
     }
   }
-  actor.move(directions.choice());
+  actor.move(directions.randomChoice());
 };
 
 game.Game = function() {
@@ -129,13 +129,20 @@ game.Game.prototype.run = function() {
 game.Game.prototype.newLevel = function() {
   this._sight.clear();
   var newFloor = this._stage.floor() + 1;
-  this._stage = new rll.Stage(new rll.Size(80, 21), newFloor);
-  var digger = new ROT.Map.Digger(79, 20);
-  var callBack = function(x, y, value) {
-    if (value) { return; }
-    this._stage.setTerrain(rll.Terrain.FLOOR, new rll.Point(x, y));
-  };
-  digger.create(callBack.bind(this));
+  var mapSize = new rll.Size(80, 21);
+  this._stage = new rll.Stage(mapSize, newFloor);
+  var generator = new rll.Generator(mapSize);
+  generator.generate();
+  generator.forEachInsideRoom(function(point) {
+    this.setTerrain(rll.Terrain.FLOOR, point);
+  }, this._stage);
+  generator.forEachDoor(function(point) {
+    this.setTerrain(rll.Terrain.OPEN_DOOR, point);
+  }, this._stage);
+  generator.forEachCorridor(function(point) {
+    this.setTerrain(rll.Terrain.FLOOR, point);
+  }, this._stage);
+  // TODO 部屋の中
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
       this._stage.randomWalkablePoint());
   this._player.setPoint(this._stage.randomWalkablePoint());

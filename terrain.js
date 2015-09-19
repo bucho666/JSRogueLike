@@ -18,6 +18,12 @@ rll.Terrain.WALL = new rll.Terrain({
   walkable: false,
   });
 
+rll.Terrain.OPEN_DOOR = new rll.Terrain({
+  character: '/',
+  color:'#840',
+  walkable: true,
+  });
+
 rll.Terrain.DOWN_STAIRS = new rll.Terrain({
   character: '>',
   color:'#ccc',

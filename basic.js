@@ -33,45 +33,70 @@ rll.random = function(min, max) {
   return min + Math.floor(Math.random() * (max - min + 1));
 };
 
-rll.List = function() {
-  Array.call(this);
-  for(var i = 0; i<arguments.length; i++) {
-    this.push(arguments[i]);
-  }
+rll.cointoss = function() {
+  return rll.random(0, 1) === 1;
 };
-inherit(rll.List, Array);
 
-rll.List.prototype.choice = function() {
+Object.defineProperty(Array.prototype, 'randomChoice', { value: function() {
   var index = rll.random(0, this.length - 1);
   return this[index];
-};
+}});
 
-rll.List.prototype.find = function(f) {
+Object.defineProperty(Array.prototype, 'find', { value: function(f) {
   for (var i=0; i<this.length; i++) {
     if (f(this[i])) return this[i];
   }
   return null;
-};
+}});
 
-rll.List.prototype.next = function(element, count) {
+Object.defineProperty(Array.prototype, 'next',
+  { value: function(element, count) {
   count = count || 1;
   var i = this.indexOf(element);
   i = (i + count) % this.length;
   return this[i];
-};
+}});
 
-rll.List.prototype.prev = function(element, count) {
+Object.defineProperty(Array.prototype, 'prev',
+  { value: function(element, count) {
   count = count || 1;
   var i = this.indexOf(element);
   i = (i + this.length - count) % this.length;
   return this[i];
-};
+}});
 
-rll.List.prototype.remove = function(element) {
+Object.defineProperty(Array.prototype, 'remove', {
+  value: function(element) {
   var index = this.indexOf(element);
   if (index === -1) return;
   this.splice(index, 1);
-};
+}});
+
+Object.defineProperty(Array.prototype, 'max', {
+  value: function(f) {
+  var max = 0,
+      object = null;
+  for (var i=0; i<this.length; i++) {
+    var value = f(this[i]);
+    if (value < max) continue;
+    max = value;
+    object = this[i];
+  }
+  return object;
+}});
+
+Object.defineProperty(Array.prototype, 'min', {
+  value: function(f) {
+  var min = null,
+      object = null;
+  for (var i=0; i<this.length; i++) {
+    var value = f(this[i]);
+    if (min !== null && value > min) continue;
+    min = value;
+    object = this[i];
+  }
+  return object;
+}});
 
 rll.Point = function(x, y) {
   this._x = x;
@@ -92,14 +117,14 @@ rll.Point.prototype.equal = function(other) {
 };
 
 rll.Point.prototype.add = function(other) {
-  var x = this.x() + other.x();
-  var y = this.y() + other.y();
+  var x = this.x() + other.x(),
+      y = this.y() + other.y();
   return new rll.Point(x, y);
 };
 
 rll.Point.prototype.distance = function(other) {
-  var x = this.x() - other.x();
-  var y = this.y() - other.y();
+  var x = this.x() - other.x(),
+      y = this.y() - other.y();
   return new rll.Point(x, y);
 };
 
@@ -156,18 +181,30 @@ rll.Point.prototype.directionsTo = function(to) {
   if (absDistanceX > absDistanceY) {
     straight = new rll.Point(tx, 0);
     if (v < absDistanceX) {
-      return new rll.List(straight, slash);
+      return [straight, slash];
     } else {
-      return new rll.List(slash, straight);
+      return [slash, straight];
     }
   } else {
     straight = new rll.Point(0, ty);
     if (v < absDistanceY) {
-      return new rll.List(straight, slash);
+      return [straight, slash];
     } else {
-      return new rll.List(slash, straight);
+      return [slash, straight];
     }
   }
+};
+
+rll.Point.prototype.crossDirectionToAtRandom = function(to) {
+  var distance = to.distance(this),
+      dx = distance.x(),
+      dy = distance.y(),
+      directions = [];
+  if (dx > 0) directions.push(rll.Direction.E);
+  if (dx < 0) directions.push(rll.Direction.W);
+  if (dy > 0) directions.push(rll.Direction.S);
+  if (dy < 0) directions.push(rll.Direction.N);
+  return directions.randomChoice();
 };
 
 rll.Point.prototype.isNextTo = function(point) {
@@ -192,11 +229,17 @@ rll.Direction.SE = rll.Direction.S.add(rll.Direction.E);
 rll.Direction.SW = rll.Direction.S.add(rll.Direction.W);
 rll.Direction.NW = rll.Direction.N.add(rll.Direction.W);
 
-rll.Direction.AROUND = new rll.List(
+rll.Direction.CROSS = [
+  rll.Direction.N, rll.Direction.E,
+  rll.Direction.S, rll.Direction.W,
+  ];
+
+rll.Direction.AROUND = [
   rll.Direction.N, rll.Direction.NE,
   rll.Direction.E, rll.Direction.SE,
   rll.Direction.S, rll.Direction.SW,
-  rll.Direction.W, rll.Direction.NW);
+  rll.Direction.W, rll.Direction.NW
+  ];
 
 rll.Size = function(width, height) {
   this._width = width;
@@ -212,9 +255,135 @@ rll.Size.prototype.height = function() {
 };
 
 rll.Size.prototype.multiply = function(other) {
-  var w = this.width()  * other.width();
-  var h = this.height() * other.height();
+  var w = this.width()  * other.width(),
+      h = this.height() * other.height();
   return new rll.Size(w, h);
+};
+
+rll.Size.prototype.area = function() {
+  return this.width() * this.height();
+};
+
+rll.Size.prototype.contraction = function(v) {
+  return new rll.Size(this.width()-v, this.height()-v);
+};
+
+rll.Rect = function(size, point) {
+  this._point = point || new rll.Point(0, 0);
+  this._size = size;
+};
+
+rll.Rect.prototype.width = function() {
+  return this._size.width();
+};
+
+rll.Rect.prototype.height = function() {
+  return this._size.height();
+};
+
+rll.Rect.prototype.forEachFrame = function(f, thisObject) {
+  var px = this._point.x(), py = this._point.y();
+  for (var y=0; y<this._size.height(); y++) {
+    f.call(thisObject, new rll.Point(px, py + y));
+    f.call(thisObject, new rll.Point(px+this._size.width()-1, py + y));
+  }
+  for (var x=1; x<this._size.width(); x++) {
+    f.call(thisObject, new rll.Point(px + x, py));
+    f.call(thisObject, new rll.Point(px + x, py + this._size.height()-1));
+  }
+};
+
+rll.Rect.prototype.forEach = function(f, thisObject) {
+  var px = this._point.x(),
+      py = this._point.y(),
+      w = this._size.width(),
+      h = this._size.height(),
+      x, y;
+  for (y=0; y < h; y++) {
+    for (x=0; x < w; x++) {
+      f.call(thisObject, new rll.Point(px+x, py+y));
+    }
+  }
+};
+
+rll.Rect.prototype.forEachInside = function(f, thisObject) {
+  var inside = this.contraction(2).move(new rll.Point(1, 1));
+  inside.forEach(f, thisObject);
+};
+
+rll.Rect.prototype.x = function() {
+  return this._point.x();
+};
+
+rll.Rect.prototype.y = function() {
+  return this._point.y();
+};
+
+rll.Rect.prototype.splitVertical = function(v) {
+  return [new rll.Rect(
+            new rll.Size(v, this._size.height()),
+            this._point),
+          new rll.Rect(
+            new rll.Size(this._size.width() - v + 1, this._size.height()),
+            new rll.Point(this._point.x() + v - 1, this._point.y()))];
+};
+
+rll.Rect.prototype.splitHorizontal = function(v) {
+  return [new rll.Rect(
+            new rll.Size(this._size.width(), v),
+            this._point),
+          new rll.Rect(
+            new rll.Size(this._size.width(), this._size.height() - v + 1),
+            new rll.Point(this._point.x(), this._point.y() + v - 1))];
+};
+
+rll.Rect.prototype.contraction = function(v) {
+  return new rll.Rect(this._size.contraction(v), this._point);
+};
+
+rll.Rect.prototype.move = function(dir) {
+  return new rll.Rect(this._size, this._point.add(dir));
+};
+
+rll.Rect.prototype.area = function() {
+  return this._size.area();
+};
+
+rll.Rect.prototype.center = function() {
+  var w = this._size.width(),
+      h = this._size.height(),
+      x, y;
+  w = Math.floor(w / 2) + (w % 2);
+  h = Math.floor(h / 2) + (h % 2);
+  x = this._point.x() + w - 1;
+  y = this._point.y() + h - 1;
+  return new rll.Point(x, y);
+};
+
+rll.Array2D = function(size, initial) {
+  initial = initial === undefined ? null : initial;
+  var h = size.height(), w = size.width();
+  this._grid = new Array(size.height());
+  for (var y=0; y<h; y++) {
+    this._grid[y] = new Array(w);
+    for (var x=0; x<w; x++) {
+      this._grid[y][x] = initial;
+    }
+  }
+};
+
+rll.Array2D.prototype.set = function(value, point) {
+  this._grid[point.y()][point.x()] = value;
+};
+
+rll.Array2D.prototype.get = function(point) {
+  return this._grid[point.y()][point.x()];
+};
+
+rll.Array2D.prototype.forEach = function(f) {
+  this._grid.forEach(function(line) {
+    line.forEach(f);
+  });
 };
 
 rll.Dice = function(dice) {
