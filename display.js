@@ -71,8 +71,8 @@ rll.Grid = function(point, ch) {
 };
 
 rll.Grid._size = null;
-rll.Grid._backGroundColor = '#000';
-
+rll.Grid.prototype._backGroundColor = '#000';
+rll.Grid.prototype._wideFont = new rll.Font('Osaka', 13);
 rll.Grid.setSize = function(newSize) {
   rll.Grid._size = newSize;
 };
@@ -89,11 +89,16 @@ rll.Grid.prototype.draw = function(context) {
   var cc = new rll.CharacterCode(this._character.code());
   var isWide = cc.isWide();
   if (isWide) w *= 2;
-  context.fillStyle = rll.Grid._backGroundColor;
+  context.fillStyle = this._backGroundColor;
   context.fillRect(x, y, w, h);
   context.fillStyle = this._character.color();
-  if (isWide) y += 1;
+  var orgFont = context.font;
+  if (isWide) {
+    context.font = this._wideFont.toString();
+    y += 2;
+  }
   context.fillText(this._character.glyph(), x, y);
+  context.font = orgFont;
 };
 
 rll.Display = function() {
