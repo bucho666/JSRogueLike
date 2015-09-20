@@ -198,7 +198,8 @@ game.Game.prototype.newLevel = function() {
 };
 
 game.Game.prototype.draw = function() {
-  this._sight.draw(this._player.point(), this._stage, this._display);
+  this._sight.scan(this._player.point(), this._stage);
+  this._sight.draw(this._display, this._stage);
   this._player.drawStatusLine(this._display, new rll.Point(0, 21));
   this._display.write(new rll.Point(71, 21), 'floor:'+this._stage.floor());
   this._messages.draw(this._display);
@@ -220,6 +221,17 @@ game.Game.prototype.handleEvent = function(e) {
       this.newLevel();
     }
   } else if (key in this._dirKey) {
+    if (onShift) {
+      while (true) {
+        if (this._sight.inMonster(this._stage, this._player)) break;
+        if (this.movePlayer(this._player, this._dirKey[key])) {
+          this.actorsAction();
+          this._sight.scan(this._player.point(), this._stage);
+        } else {
+          break;
+        }
+      }
+    }
     if (this.movePlayer(this._player, this._dirKey[key])) {
       this.actorsAction();
     }

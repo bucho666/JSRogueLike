@@ -2,6 +2,7 @@
 rll.Sight = function(player, size) {
   this._player = player;
   this._memory = [];
+  this._sight = null;
   for (var y=0, h=size.height(); y<h; y++) {
     this._memory[y] = [];
     for (var x=0, w=size.width(); x<w; x++) {
@@ -24,19 +25,36 @@ rll.Sight.prototype.clear = function() {
   }
 };
 
-rll.Sight.prototype.draw = function(point, stage, display) {
+rll.Sight.prototype.draw = function(display, stage) {
   for (var y=0; y < this._memory.length; y++) {
     for (var x=0; x < this._memory[y].length; x++) {
       this._memory[y][x].draw(display, new rll.Point(x, y));
     }
   }
-  var view = new rll.View(this._radius);
-  var sight = view.scan(point, stage);
-  for (var i=0; i<sight.length; i++) {
-    var p = sight[i];
+  for (var i=0; i<this._sight.length; i++) {
+    var p = this._sight[i];
     stage.draw(display, p);
+  }
+};
+
+rll.Sight.prototype.scan = function(point, stage) {
+  var view = new rll.View(this._radius), p, i;
+  this._sight = view.scan(point, stage);
+  for (i=0; i<this._sight.length; i++) {
+    p = this._sight[i];
     this.setMemory(stage.terrain(p), p);
   }
+};
+
+rll.Sight.prototype.inMonster = function(stage, me) {
+  var i, point, actor;
+  for (i=0; i<this._sight.length; i++) {
+    point = this._sight[i];
+    actor = stage.findActor(point);
+    if (actor === null) continue;
+    if (actor != me) return true;
+  }
+  return false;
 };
 
 rll.View = function(radius) {
