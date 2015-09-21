@@ -253,43 +253,69 @@ game.Game.prototype.movePlayer = function(direction) {
   return true;
 };
 
+game.Runner = function(actor, direction, stage) {
+  this._actor = actor;
+  this._stage = stage;
+  this._direction = direction;
+  var leftPoint = this._actor.leftPoint(this._direction),
+      rightPoint = this._actor.rightPoint(this._direction);
+  this._leftWalkable = this._stage.walkableAt(direction.add(leftPoint));
+  this._rightWalkable = this._stage.walkableAt(direction.add(rightPoint));
+};
+
+game.Runner.prototype.direction = function() {
+  return this._direction;
+};
+
+game.Runner.prototype.inCorrier = function() {
+  return (this._leftWalkable === false && this._rightWalkable === false);
+};
+
+game.Runner.prototype.runnableStraight = function() {
+  var forward = this._direction.add(this._actor.point());
+  return this._stage.walkableAt(forward);
+};
+
+game.Runner.prototype.onBranch = function() {
+  var leftPoint = this._actor.leftPoint(this._direction),
+      rightPoint = this._actor.rightPoint(this._direction);
+  if (this._stage.walkableAt(leftPoint) !== this._leftWalkable) return true;
+  if (this._stage.walkableAt(rightPoint) !== this._rightWalkable) return true;
+  return false;
+};
+
+game.Runner.prototype.mustStop = function() {
+  if (this.inCorrier() === false) return this.onBranch();
+  if (this.runnableStraight()) return this.onBranch();
+  return this._turn();
+};
+
+game.Runner.prototype._turn = function() {
+  var forward = this._direction.add(this._actor.point()),
+      cross = rll.Direction.CROSS,
+      side;
+  if (this._stage.walkableAt(forward) === false) {
+    side = [cross.next(this._direction, 1), cross.prev(this._direction, 1),];
+    side = side.filter(function(direction) {
+      return this._stage.walkableAt(direction.add(this._actor.point()));
+    }, this);
+    if (side.length !== 1) return true;
+    this._direction = side[0];
+  }
+  return false;
+};
+
 game.Game.prototype.runPlayer = function(direction) {
   if (direction.equal(rll.Direction.HERE)) return true;
-  var leftPoint = this._player.leftPoint(direction),
-    rightPoint = this._player.rightPoint(direction),
-    leftWalkable = this._stage.walkableAt(direction.add(leftPoint)),
-    rightWalkable = this._stage.walkableAt(direction.add(rightPoint)),
-    forward, side;
+  var runner = new game.Runner(this._player, direction, this._stage);
   while (true) {
     if (this._sight.inMonster(this._stage, this._player)) break;
     if (this.movePlayer(direction) === false) break;
     this.actorsAction();
     this._sight.scan(this._player.point(), this._stage);
     if (this._stage.downableAt(this._player.point())) break;
-    if (leftWalkable === false && rightWalkable === false) {
-      forward = direction.add(this._player.point());
-      if (this._stage.walkableAt(forward) === false) {
-        side = [
-          rll.Direction.CROSS.next(direction, 1),
-          rll.Direction.CROSS.prev(direction, 1),
-        ];
-        side = side.filter(function(direction) {
-          return this._stage.walkableAt(direction.add(this._player.point()));
-        }, this);
-        if (side.length !== 1) break;
-        direction = side[0];
-      } else {
-        leftPoint = this._player.leftPoint(direction);
-        rightPoint = this._player.rightPoint(direction);
-        if (this._stage.walkableAt(leftPoint) !== leftWalkable) break;
-        if (this._stage.walkableAt(rightPoint) !== rightWalkable) break;
-      }
-    } else {
-      leftPoint = this._player.leftPoint(direction);
-      rightPoint = this._player.rightPoint(direction);
-      if (this._stage.walkableAt(leftPoint) !== leftWalkable) break;
-      if (this._stage.walkableAt(rightPoint) !== rightWalkable) break;
-    }
+    if (runner.mustStop()) break;
+    direction = runner.direction();
   }
 };
 
