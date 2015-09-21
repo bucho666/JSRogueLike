@@ -222,17 +222,8 @@ game.Game.prototype.handleEvent = function(e) {
     }
   } else if (key in this._dirKey) {
     if (onShift) {
-      while (true) {
-        if (this._sight.inMonster(this._stage, this._player)) break;
-        if (this.movePlayer(this._player, this._dirKey[key])) {
-          this.actorsAction();
-          this._sight.scan(this._player.point(), this._stage);
-        } else {
-          break;
-        }
-      }
-    }
-    if (this.movePlayer(this._player, this._dirKey[key])) {
+      this.runPlayer(this._dirKey[key]);
+    } else if (this.movePlayer(this._dirKey[key])) {
       this.actorsAction();
     }
   } else {
@@ -247,19 +238,59 @@ game.Game.prototype.actorsAction = function() {
   });
 };
 
-game.Game.prototype.movePlayer = function(actor, direction) {
+game.Game.prototype.movePlayer = function(direction) {
   if (direction.equal(rll.Direction.HERE)) return true;
-  var to = actor.movedPoint(direction);
-  var monster = this._stage.findActor(to);
+  var to = this._player.movedPoint(direction),
+      monster = this._stage.findActor(to);
   if (monster) {
     this.attackToMonster(monster);
     return true;
   }
-  if (this._stage.walkableAt(actor.movedPoint(direction)) === false) {
+  if (this._stage.walkableAt(this._player.movedPoint(direction)) === false) {
     return false;
   }
-  actor.move(direction);
+  this._player.move(direction);
   return true;
+};
+
+game.Game.prototype.runPlayer = function(direction) {
+  if (direction.equal(rll.Direction.HERE)) return true;
+  var leftPoint = this._player.leftPoint(direction),
+    rightPoint = this._player.rightPoint(direction),
+    leftWalkable = this._stage.walkableAt(direction.add(leftPoint)),
+    rightWalkable = this._stage.walkableAt(direction.add(rightPoint)),
+    forward, side;
+  while (true) {
+    if (this._sight.inMonster(this._stage, this._player)) break;
+    if (this.movePlayer(direction) === false) break;
+    this.actorsAction();
+    this._sight.scan(this._player.point(), this._stage);
+    if (this._stage.downableAt(this._player.point())) break;
+    if (leftWalkable === false && rightWalkable === false) {
+      forward = direction.add(this._player.point());
+      if (this._stage.walkableAt(forward) === false) {
+        side = [
+          rll.Direction.CROSS.next(direction, 1),
+          rll.Direction.CROSS.prev(direction, 1),
+        ];
+        side = side.filter(function(direction) {
+          return this._stage.walkableAt(direction.add(this._player.point()));
+        }, this);
+        if (side.length !== 1) break;
+        direction = side[0];
+      } else {
+        leftPoint = this._player.leftPoint(direction);
+        rightPoint = this._player.rightPoint(direction);
+        if (this._stage.walkableAt(leftPoint) !== leftWalkable) break;
+        if (this._stage.walkableAt(rightPoint) !== rightWalkable) break;
+      }
+    } else {
+      leftPoint = this._player.leftPoint(direction);
+      rightPoint = this._player.rightPoint(direction);
+      if (this._stage.walkableAt(leftPoint) !== leftWalkable) break;
+      if (this._stage.walkableAt(rightPoint) !== rightWalkable) break;
+    }
+  }
 };
 
 game.Game.prototype.attackToMonster = function(monster) {

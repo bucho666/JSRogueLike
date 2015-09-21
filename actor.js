@@ -133,6 +133,16 @@ rll.Player = function(character, name) {
 };
 inherit(rll.Player, rll.Actor);
 
+rll.Player.prototype.rightPoint = function(direction) {
+  var right = rll.Direction.AROUND.next(direction, 2);
+  return this._point.add(right);
+};
+
+rll.Player.prototype.leftPoint = function(direction) {
+  var left = rll.Direction.AROUND.prev(direction, 2);
+  return this._point.add(left);
+};
+
 rll.Player.prototype.toHit = function() {
   return this._level;
 };
