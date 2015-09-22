@@ -421,3 +421,8 @@ rll.Dice.prototype.number = function() {
 rll.Dice.prototype.adjust = function() {
   return this._adjust;
 };
+
+rll.Dice.prototype.sided = function() {
+  return this._sided;
+};
+

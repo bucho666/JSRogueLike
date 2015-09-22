@@ -185,6 +185,10 @@ rll.Generator.prototype.ROOM_WIDTH_MIN = 9;
 rll.Generator.prototype.ROOM_HEIGHT_MAX = 11;
 rll.Generator.prototype.ROOM_HEIGHT_MIN = 5;
 
+rll.Generator.prototype.forEachRoom = function(f, thisObject) {
+  this._rooms.forEach(f, thisObject);
+};
+
 rll.Generator.prototype.forEachInsideRoom = function(f, thisObject) {
   this._rooms.forEach(function(room) {
     room.forEachInside(this);

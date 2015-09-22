@@ -146,10 +146,12 @@ game.Game.prototype.newLevel = function() {
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
       generator.roomInsidePointAtRandom());
   this._player.setPoint(generator.roomInsidePointAtRandom());
-  for (i=0; i<5; i++) { // TODO
-    this._stage.putItem(generator.roomInsidePointAtRandom(),
-        new rll.Money(Math.floor((new rll.Dice('1d6')).roll() * 100)));
-  }
+  generator.forEachRoom(function(room) {
+    if (rll.cointoss()) return;
+    var diceNum = (Math.floor(this.floor() / 5) + 1) * 6;
+    this.putItem(room.insidePointAtRandom(),
+      new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100 / 5)));
+  }, this._stage);
   this._stage.addActor(this._player);
   var monsterNum = 2 + parseInt(this._stage.floor() / 3);
   for (i=0; i<monsterNum; i++) {

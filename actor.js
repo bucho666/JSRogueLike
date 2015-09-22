@@ -138,38 +138,16 @@ rll.Monster.prototype.toHit = function() {
   return this._hitDice.number();
 };
 
+rll.Monster.prototype.expBaseTable = [5, 10, 20, 25, 75, 175, 275];
+rll.Monster.prototype.expAdjustTable = [0, 5, 5, 25, 50, 50];
 rll.Monster.prototype.exp = function() {
-  var base = [5, 10, 20, 25, 75, 175, 275],
-      adjustBonus = [0, 5, 5, 25, 50, 50],
-      diceNum = this._hitDice.number(),
-      exp = base[diceNum];
+  var diceNum = Math.floor(this._hitDice.number() * this._hitDice.sided() / 8),
+      exp = this.expBaseTable[diceNum];
   if (this._hitDice.adjust() > 0) {
-    exp += adjustBonus[diceNum];
+    exp += this.expAdjustTable[diceNum];
   }
   return exp;
 };
-
-/*
- *  adjustBonus;
- *  1+:5,
- *  2+:5,
- *  3+:25,
- *  4+:50,
- *  5+:50,
- *
- *  base
- *  0:5,
- *  1:10,
- *  2:20,
- *  3:25,
- *  4:75,
- *  5:175,
- *  6:275
- *  gold = f1:1d6*100/6 f2:1d12*100/6
- *  1,2 = monster
- *  2,4 = trap, special
- *  5,6 = empty// no Tresuer
- */
 
 rll.Player = function(character, name) {
   rll.Actor.call(this, character, name);
