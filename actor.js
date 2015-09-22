@@ -1,11 +1,20 @@
 /* global rll, inherit*/
-rll.State = function(value) {
+rll.State = function(max, value) {
+  value = value === undefined ? max : value;
   this._current = value;
-  this._max = value;
+  this._max = max;
+};
+
+rll.State.prototype.isFull = function() {
+  return this._current >= this._max;
 };
 
 rll.State.prototype.current = function() {
   return this._current;
+};
+
+rll.State.prototype.max = function() {
+  return this._max;
 };
 
 rll.State.prototype.add = function(value) {
@@ -13,6 +22,10 @@ rll.State.prototype.add = function(value) {
   if (this._current > this._max) {
     this._current = this._max;
   }
+};
+
+rll.State.prototype.overAdd = function(value) {
+  this._current += value;
 };
 
 rll.State.prototype.addMax = function(value) {
@@ -115,7 +128,6 @@ rll.Monster = function(config) {
   this._armorClass = config.armorClass;
   this._damage = new rll.Dice(config.damage);
 };
-
 inherit(rll.Monster, rll.Actor);
 
 rll.Monster.prototype.attackDamage = function() {
@@ -124,6 +136,17 @@ rll.Monster.prototype.attackDamage = function() {
 
 rll.Monster.prototype.toHit = function() {
   return this._hitDice.number();
+};
+
+rll.Monster.prototype.exp = function() {
+  var base = [5, 10, 20, 25, 75, 175, 275],
+      adjustBonus = [0, 5, 5, 25, 50, 50],
+      diceNum = this._hitDice.number(),
+      exp = base[diceNum];
+  if (this._hitDice.adjust() > 0) {
+    exp += adjustBonus[diceNum];
+  }
+  return exp;
 };
 
 /*
@@ -151,9 +174,14 @@ rll.Monster.prototype.toHit = function() {
 rll.Player = function(character, name) {
   rll.Actor.call(this, character, name);
   this._level = 1;
+  this._exp = new rll.State(2000, 0);
   this.setAction(new rll.Player.AutoHeal(this));
 };
 inherit(rll.Player, rll.Actor);
+
+rll.Player.prototype.level = function() {
+  return this._level;
+};
 
 rll.Player.prototype.rightPoint = function(direction) {
   var right = rll.Direction.AROUND.next(direction, 2);
@@ -169,6 +197,33 @@ rll.Player.prototype.toHit = function() {
   return this._level;
 };
 
+rll.Player.prototype.getMoney = function(money) {
+  this.getExp(money.value());
+};
+
+rll.Player.prototype.getExp = function(value) {
+  this._exp.overAdd(value);
+};
+
+rll.Player.prototype.expIsFull = function() {
+  return this._exp.isFull();
+};
+
+rll.Player.prototype.levelUp = function() {
+  this._level += 1;
+  this._hp.addMax((new rll.Dice('1d8')).roll());
+  var exp = this._exp.current() - this._exp.max();
+  this._exp = new rll.State(this._exp.max() * 2, exp);
+};
+
+rll.Player.prototype.drawStatusLine = function(display, point) {
+  var line = 'hp:' + this._hp;
+  line += ' LV:' + this._level;
+  line += ' exp:' + this._exp;
+  display.clearLine(point.y());
+  display.write(point, line);
+};
+
 rll.Player.AutoHeal = function(actor) {
   this._actor = actor;
 };
@@ -177,8 +232,4 @@ rll.Player.AutoHeal.prototype.compute = function() {
   if (rll.random(0, 7) == 1) {
     this._actor.heal(1);
   }
-};
-
-rll.Player.prototype.drawStatusLine = function(display, point) {
-  display.write(point, 'hp:' + this._hp);
 };

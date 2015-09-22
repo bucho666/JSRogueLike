@@ -417,3 +417,7 @@ rll.Dice.prototype.roll = function() {
 rll.Dice.prototype.number = function() {
   return parseInt(this._num);
 };
+
+rll.Dice.prototype.adjust = function() {
+  return this._adjust;
+};

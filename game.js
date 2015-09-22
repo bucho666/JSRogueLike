@@ -1,4 +1,4 @@
-/*global rll, document, inherit*/
+/*global rll, document*/
 var game = game || {};
 
 game.keyEvent = new rll.KeyEvent();
@@ -126,13 +126,6 @@ game.Game.prototype.run = function() {
   this.draw();
 };
 
-game.Money = function(value) {
-  this._value = value;
-  rll.Entity.call(this, game.Money.character, '銀貨');
-};
-game.Money.character = new rll.Character('$', '#ff0');
-inherit(game.Money, rll.Entity);
-
 game.Game.prototype.newLevel = function() {
   this._sight.clear();
   var newFloor = this._stage.floor() + 1;
@@ -153,9 +146,9 @@ game.Game.prototype.newLevel = function() {
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
       generator.roomInsidePointAtRandom());
   this._player.setPoint(generator.roomInsidePointAtRandom());
-  for (i=0; i<5; i++) {
+  for (i=0; i<5; i++) { // TODO
     this._stage.putItem(generator.roomInsidePointAtRandom(),
-        new game.Money(Math.floor((new rll.Dice('1d6')).roll() * 100 / 6)));
+        new rll.Money(Math.floor((new rll.Dice('1d6')).roll() * 100)));
   }
   this._stage.addActor(this._player);
   var monsterNum = 2 + parseInt(this._stage.floor() / 3);
@@ -235,6 +228,7 @@ game.Game.prototype.handleEvent = function(e) {
     if (onShift) {
       this.runPlayer(this._dirKey[key]);
     } else if (this.movePlayer(this._dirKey[key])) {
+      this._pickupMoney();
       this.actorsAction();
     }
   } else {
@@ -261,6 +255,18 @@ game.Game.prototype.movePlayer = function(direction) {
     return false;
   }
   this._player.move(direction);
+  return true;
+};
+
+game.Game.prototype._pickupMoney = function() {
+  var money = this._stage.pickupItem(this._player.point());
+  if (money === undefined) return false;
+  this._player.getMoney(money);
+  this.message('銀貨を'+money.value()+'枚手に入れた。');
+  if ( this._player.expIsFull()) {
+    this._player.levelUp();
+    this.message('レベル' + this._player.level() + 'へようこそ!!');
+  }
   return true;
 };
 
@@ -324,6 +330,7 @@ game.Game.prototype.runPlayer = function(direction) {
     if (this.movePlayer(direction) === false) break;
     this.actorsAction();
     this._sight.scan(this._player.point(), this._stage);
+    if (this._pickupMoney()) break;
     if (this._stage.downableAt(this._player.point())) break;
     if (runner.mustStop()) break;
     direction = runner.direction();
@@ -340,6 +347,7 @@ game.Game.prototype.attackToMonster = function(monster) {
   this.message(monster.name() + 'に命中' + damage + 'のダメージ!');
   if (monster.isDead() === false) return;
   this.message(monster.name() + 'をたおした!!');
+  this._player.getExp(monster.exp());
   this._stage.removeActor(monster);
 };
 
