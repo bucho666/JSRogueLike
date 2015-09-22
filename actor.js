@@ -126,6 +126,28 @@ rll.Monster.prototype.toHit = function() {
   return this._hitDice.number();
 };
 
+/*
+ *  adjustBonus;
+ *  1+:5,
+ *  2+:5,
+ *  3+:25,
+ *  4+:50,
+ *  5+:50,
+ *
+ *  base
+ *  0:5,
+ *  1:10,
+ *  2:20,
+ *  3:25,
+ *  4:75,
+ *  5:175,
+ *  6:275
+ *  gold = f1:1d6*100/6 f2:1d12*100/6
+ *  1,2 = monster
+ *  2,4 = trap, special
+ *  5,6 = empty// no Tresuer
+ */
+
 rll.Player = function(character, name) {
   rll.Actor.call(this, character, name);
   this._level = 1;

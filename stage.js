@@ -42,6 +42,21 @@ rll.Stage = function(size, floor) {
   this._terrain = new rll.TerrainMap(size);
   this._actors = [];
   this._floor = floor;
+  this._item = {};
+};
+
+rll.Stage.prototype.item = function(point) {
+  return this._item[point];
+};
+
+rll.Stage.prototype.putItem = function(point, item) {
+  this._item[point] = item;
+};
+
+rll.Stage.prototype.pickupItem = function(point) {
+  var item = this._item[point];
+  delete this._item[point];
+  return item;
 };
 
 rll.Stage.prototype.terrain = function(point) {
@@ -83,12 +98,17 @@ rll.Stage.prototype.find = function(callback) {
 };
 
 rll.Stage.prototype.draw = function(display, point) {
-  var a = this.findActor(point);
+  var a = this.findActor(point), item;
   if (a) {
     a.draw(display);
-  } else {
-    this._terrain.draw(display, point);
+    return;
   }
+  item = this.item(point);
+  if (item) {
+    item.draw(display, point);
+    return;
+  }
+  this._terrain.draw(display, point);
 };
 
 rll.Stage.prototype.walkableAt = function(point) {

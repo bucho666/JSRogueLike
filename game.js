@@ -1,4 +1,4 @@
-/*global rll, document*/
+/*global rll, document, inherit*/
 var game = game || {};
 
 game.keyEvent = new rll.KeyEvent();
@@ -126,10 +126,18 @@ game.Game.prototype.run = function() {
   this.draw();
 };
 
+game.Money = function(value) {
+  this._value = value;
+  rll.Entity.call(this, game.Money.character, '銀貨');
+};
+game.Money.character = new rll.Character('$', '#ff0');
+inherit(game.Money, rll.Entity);
+
 game.Game.prototype.newLevel = function() {
   this._sight.clear();
   var newFloor = this._stage.floor() + 1;
   var mapSize = new rll.Size(80, 21);
+  var i;
   this._stage = new rll.Stage(mapSize, newFloor);
   var generator = new rll.Generator(mapSize);
   generator.generate();
@@ -145,9 +153,13 @@ game.Game.prototype.newLevel = function() {
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
       generator.roomInsidePointAtRandom());
   this._player.setPoint(generator.roomInsidePointAtRandom());
+  for (i=0; i<5; i++) {
+    this._stage.putItem(generator.roomInsidePointAtRandom(),
+        new game.Money(Math.floor((new rll.Dice('1d6')).roll() * 100 / 6)));
+  }
   this._stage.addActor(this._player);
   var monsterNum = 2 + parseInt(this._stage.floor() / 3);
-  for (var i=0; i<monsterNum; i++) {
+  for (i=0; i<monsterNum; i++) {
     var m;
     switch(rll.random(0, 5)) {
     case 0:

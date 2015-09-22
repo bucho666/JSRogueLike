@@ -38,11 +38,13 @@ rll.Sight.prototype.draw = function(display, stage) {
 };
 
 rll.Sight.prototype.scan = function(point, stage) {
-  var view = new rll.View(this._radius), p, i;
+  var view = new rll.View(this._radius), p, i, entity;
   this._sight = view.scan(point, stage);
   for (i=0; i<this._sight.length; i++) {
     p = this._sight[i];
-    this.setMemory(stage.terrain(p), p);
+    entity = stage.item(p);
+    entity = entity ? entity : stage.terrain(p);
+    this.setMemory(entity, p);
   }
 };
 
