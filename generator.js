@@ -191,6 +191,17 @@ rll.Generator.prototype.forEachInsideRoom = function(f, thisObject) {
     room.forEachInside(this);
   }, f.bind(thisObject));
 };
+/*
+rll.Generator.prototype.forEachInsideRoom = function(f, thisObject) {
+  this._rooms.forEach(function(room) {
+    room.forEachInside(this);
+  }, f.bind(thisObject));
+};
+*/
+
+rll.Generator.prototype.roomInsidePointAtRandom = function() {
+};
+
 
 rll.Generator.prototype.forEachDoor = function(f, thisObject) {
   this._door.forEach(f, thisObject);
@@ -223,18 +234,18 @@ rll.Generator.prototype.spliteRegions = function() {
 rll.Generator.prototype.connectRooms = function() {
   var unconnected = this._rooms.concat(),
       map = this.makeRegionFrameMap(),
-      fromRoom = unconnected.randomChoice(),
+      fromRoom = unconnected.choiceAtRandom(),
       extend = rll.random(0, this.EXTEND_CONNECT_MAX),
       toRoom;
   while (unconnected.length > 1) {
     unconnected.remove(fromRoom);
-    toRoom = unconnected.randomChoice();
+    toRoom = unconnected.choiceAtRandom();
     this.connectRoom(fromRoom, toRoom, map);
     fromRoom = toRoom;
   }
   while(extend--) {
-    fromRoom = this._rooms.randomChoice();
-    toRoom = this._rooms.randomChoice();
+    fromRoom = this._rooms.choiceAtRandom();
+    toRoom = this._rooms.choiceAtRandom();
     if (fromRoom === toRoom) continue;
     this.connectRoom(fromRoom, toRoom, map);
   }

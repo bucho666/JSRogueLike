@@ -29,7 +29,7 @@ game.AI.prototype.compute = function(actor) {
 };
 
 game.AI.prototype.attackToPlayer = function(actor, player) {
-  var attack = new game.MeleeAttack(actor, player); // TODO game
+  var attack = new game.MeleeAttack(actor, player);
   if (attack.isHit() === false) {
     this._game.message(actor.name() + 'の攻撃をかわした!');
     return;
@@ -73,7 +73,7 @@ game.AI.prototype.randomMove = function(actor) {
       directions.push(dir);
     }
   }
-  actor.move(directions.randomChoice());
+  actor.move(directions.choiceAtRandom());
 };
 
 game.Game = function() {
@@ -143,6 +143,8 @@ game.Game.prototype.newLevel = function() {
     this.setTerrain(rll.Terrain.FLOOR, point);
   }, this._stage);
   // TODO 部屋の中
+  // this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
+  //  generator.roomInsidePointAtRandom());
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
       this._stage.randomWalkablePoint());
   this._player.setPoint(this._stage.randomWalkablePoint());

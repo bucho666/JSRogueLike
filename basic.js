@@ -1,3 +1,4 @@
+/*jshint unused: false*/
 var inherit = function(child, parent) {
   var F = function(){};
   F.prototype = parent.prototype;
@@ -37,7 +38,7 @@ rll.cointoss = function() {
   return rll.random(0, 1) === 1;
 };
 
-Object.defineProperty(Array.prototype, 'randomChoice', { value: function() {
+Object.defineProperty(Array.prototype, 'choiceAtRandom', { value: function() {
   var index = rll.random(0, this.length - 1);
   return this[index];
 }});
@@ -204,7 +205,7 @@ rll.Point.prototype.crossDirectionToAtRandom = function(to) {
   if (dx < 0) directions.push(rll.Direction.W);
   if (dy > 0) directions.push(rll.Direction.S);
   if (dy < 0) directions.push(rll.Direction.N);
-  return directions.randomChoice();
+  return directions.choiceAtRandom();
 };
 
 rll.Point.prototype.isNextTo = function(point) {
