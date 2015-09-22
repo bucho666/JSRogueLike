@@ -312,6 +312,12 @@ rll.Rect.prototype.forEachInside = function(f, thisObject) {
   inside.forEach(f, thisObject);
 };
 
+rll.Rect.prototype.insidePointAtRandom = function() {
+  var x = rll.random(this._point.x() + 1, this._point.x() + this._size.width() - 2),
+      y = rll.random(this._point.y() + 1, this._point.y() + this._size.height() - 2);
+  return new rll.Point(x, y);
+};
+
 rll.Rect.prototype.x = function() {
   return this._point.x();
 };

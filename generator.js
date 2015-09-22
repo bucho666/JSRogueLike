@@ -31,7 +31,6 @@ rll.Room.prototype.randomSideOf = function(side) {
   return new rll.Point(x, y);
 };
 
-
 rll.Region = function(size) {
   this._rects = [new rll.Rect(size.contraction(2), new rll.Point(1, 1))];
   this._size = size;
@@ -191,17 +190,11 @@ rll.Generator.prototype.forEachInsideRoom = function(f, thisObject) {
     room.forEachInside(this);
   }, f.bind(thisObject));
 };
-/*
-rll.Generator.prototype.forEachInsideRoom = function(f, thisObject) {
-  this._rooms.forEach(function(room) {
-    room.forEachInside(this);
-  }, f.bind(thisObject));
-};
-*/
 
 rll.Generator.prototype.roomInsidePointAtRandom = function() {
+  var room = this._rooms.choiceAtRandom();
+  return room.insidePointAtRandom();
 };
-
 
 rll.Generator.prototype.forEachDoor = function(f, thisObject) {
   this._door.forEach(f, thisObject);

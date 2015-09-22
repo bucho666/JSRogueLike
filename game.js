@@ -142,12 +142,9 @@ game.Game.prototype.newLevel = function() {
   generator.forEachCorridor(function(point) {
     this.setTerrain(rll.Terrain.FLOOR, point);
   }, this._stage);
-  // TODO 部屋の中
-  // this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
-  //  generator.roomInsidePointAtRandom());
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
-      this._stage.randomWalkablePoint());
-  this._player.setPoint(this._stage.randomWalkablePoint());
+      generator.roomInsidePointAtRandom());
+  this._player.setPoint(generator.roomInsidePointAtRandom());
   this._stage.addActor(this._player);
   var monsterNum = 2 + parseInt(this._stage.floor() / 3);
   for (var i=0; i<monsterNum; i++) {
