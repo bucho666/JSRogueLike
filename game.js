@@ -150,7 +150,7 @@ game.Game.prototype.newLevel = function() {
     if (rll.cointoss()) return;
     var diceNum = (Math.floor(this.floor() / 5) + 1) * 6;
     this.putItem(room.insidePointAtRandom(),
-      new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100 / 5)));
+      new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100 / 2)));
   }, this._stage);
   this._stage.addActor(this._player);
   var monsterNum = 2 + parseInt(this._stage.floor() / 3);
