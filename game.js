@@ -146,7 +146,19 @@ game.Game.prototype.newLevel = function() {
     this.setTerrain(rll.Terrain.FLOOR, point);
   }, this._stage);
   generator.forEachDoor(function(point) {
-    this.setTerrain(rll.Terrain.CLOSED_DOOR, point);
+    var doorTerrain;
+    switch(rll.random(1, 6)) {
+      case 1:
+        doorTerrain = rll.Terrain.FLOOR;
+        break;
+      case 2:
+        doorTerrain = rll.Terrain.OPENED_DOOR;
+        break;
+      default:
+        doorTerrain = rll.Terrain.CLOSED_DOOR;
+        break;
+    }
+    this.setTerrain(doorTerrain, point);
   }, this._stage);
   generator.forEachCorridor(function(point) {
     this.setTerrain(rll.Terrain.FLOOR, point);
