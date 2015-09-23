@@ -138,7 +138,7 @@ game.Game.prototype.newLevel = function() {
     this.setTerrain(rll.Terrain.FLOOR, point);
   }, this._stage);
   generator.forEachDoor(function(point) {
-    this.setTerrain(rll.Terrain.OPEN_DOOR, point);
+    this.setTerrain(rll.Terrain.CLOSED_DOOR, point);
   }, this._stage);
   generator.forEachCorridor(function(point) {
     this.setTerrain(rll.Terrain.FLOOR, point);
@@ -249,6 +249,10 @@ game.Game.prototype.movePlayer = function(direction) {
   if (direction.equal(rll.Direction.HERE)) return true;
   var to = this._player.movedPoint(direction),
       monster = this._stage.findActor(to);
+  if (this._stage.closedDoorAt(to)) {
+    this._stage.openDoorAt(to);
+    return true;
+  }
   if (monster) {
     this.attackToMonster(monster);
     return true;
@@ -278,8 +282,13 @@ game.Runner = function(actor, direction, stage) {
   this._direction = direction;
   var leftPoint = this._actor.leftPoint(this._direction),
       rightPoint = this._actor.rightPoint(this._direction);
-  this._leftWalkable = this._stage.walkableAt(direction.add(leftPoint));
-  this._rightWalkable = this._stage.walkableAt(direction.add(rightPoint));
+  this._leftWalkable = this.walkableAt(direction.add(leftPoint));
+  this._rightWalkable = this.walkableAt(direction.add(rightPoint));
+};
+
+game.Runner.prototype.inFrontDoor = function() {
+  var forward = this._direction.add(this._actor.point());
+  return this._stage.closedDoorAt(forward);
 };
 
 game.Runner.prototype.direction = function() {
@@ -292,15 +301,20 @@ game.Runner.prototype.inCorrier = function() {
 
 game.Runner.prototype.runnableStraight = function() {
   var forward = this._direction.add(this._actor.point());
-  return this._stage.walkableAt(forward);
+  return this.walkableAt(forward);
 };
 
 game.Runner.prototype.onBranch = function() {
   var leftPoint = this._actor.leftPoint(this._direction),
       rightPoint = this._actor.rightPoint(this._direction);
-  if (this._stage.walkableAt(leftPoint) !== this._leftWalkable) return true;
-  if (this._stage.walkableAt(rightPoint) !== this._rightWalkable) return true;
+  if (this.walkableAt(leftPoint) !== this._leftWalkable) return true;
+  if (this.walkableAt(rightPoint) !== this._rightWalkable) return true;
   return false;
+};
+
+game.Runner.prototype.walkableAt = function(point) {
+  if (this._stage.closedDoorAt(point)) return true;
+  return this._stage.walkableAt(point);
 };
 
 game.Runner.prototype.mustStop = function() {
@@ -328,6 +342,7 @@ game.Game.prototype.runPlayer = function(direction) {
   if (direction.equal(rll.Direction.HERE)) return true;
   var runner = new game.Runner(this._player, direction, this._stage);
   while (true) {
+    if (runner.inFrontDoor()) break;
     if (this._sight.inMonster(this._stage, this._player)) break;
     if (this.movePlayer(direction) === false) break;
     this.actorsAction();

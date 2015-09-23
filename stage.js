@@ -25,7 +25,7 @@ rll.TerrainMap.prototype.walkableAt = function(point) {
   return this._terrain[point.y()][point.x()].walkable();
 };
 
-rll.TerrainMap.prototype.downableAt= function(point) {
+rll.TerrainMap.prototype.downableAt = function(point) {
   return this._terrain[point.y()][point.x()] == rll.Terrain.DOWN_STAIRS;
 };
 
@@ -36,6 +36,22 @@ rll.TerrainMap.prototype.randomWalkablePoint = function() {
     var p = new rll.Point(rll.random(0, w-1), rll.random(0, h-1));
     if (this.walkableAt(p)) return p;
   }
+};
+
+rll.TerrainMap.prototype.closedDoorAt = function(point) {
+  return this._terrain[point.y()][point.x()] === rll.Terrain.CLOSED_DOOR;
+};
+
+rll.TerrainMap.prototype.openedDoorAt = function(point) {
+  return this._terrain[point.y()][point.x()] === rll.Terrain.OPENED_DOOR;
+};
+
+rll.TerrainMap.prototype.closeDoorAt = function(point) {
+  this._terrain[point.y()][point.x()] = rll.Terrain.CLOSED_DOOR;
+};
+
+rll.TerrainMap.prototype.openDoorAt = function(point) {
+  this._terrain[point.y()][point.x()] = rll.Terrain.OPENED_DOOR;
 };
 
 rll.Stage = function(size, floor) {
@@ -124,4 +140,20 @@ rll.Stage.prototype.downableAt = function(point) {
 rll.Stage.prototype.passLight = function(point) {
   if (this._terrain.walkableAt(point) === false) return false;
   return true;
+};
+
+rll.Stage.prototype.closedDoorAt = function(point) {
+  return this._terrain.closedDoorAt(point);
+};
+
+rll.Stage.prototype.closeDoorAt = function(point) {
+  this._terrain.closeDoorAt(point);
+};
+
+rll.Stage.prototype.opendDoorAt = function(point) {
+  return this._terrain.opendDoorAt(point);
+};
+
+rll.Stage.prototype.openDoorAt = function(point) {
+  this._terrain.openDoorAt(point);
 };
