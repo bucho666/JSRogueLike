@@ -166,6 +166,7 @@ rll.Player = function(character, name) {
   rll.Actor.call(this, character, name);
   this._level = 1;
   this._exp = new rll.State(2000, 0);
+  this._armorClass = 6;
   this.setAction(new rll.Player.AutoHeal(this));
 };
 inherit(rll.Player, rll.Actor);
