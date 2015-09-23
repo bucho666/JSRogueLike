@@ -149,6 +149,19 @@ rll.Monster.prototype.exp = function() {
   return exp;
 };
 
+rll.Monster.prototype.openableDoor = function() {
+  return false;
+};
+
+rll.Humanoid = function(config) {
+  rll.Monster.call(this, config);
+};
+inherit(rll.Humanoid, rll.Monster);
+
+rll.Humanoid.prototype.openableDoor = function() {
+  return true;
+};
+
 rll.Player = function(character, name) {
   rll.Actor.call(this, character, name);
   this._level = 1;

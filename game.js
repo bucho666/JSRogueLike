@@ -83,7 +83,9 @@ game.AI.prototype.chase = function(actor, point) {
   for (var i=0; i<directions.length; i++) {
     var dir = directions[i];
     var to = actor.movedPoint(dir);
-    if (stage.walkableAt(to)) {
+    if (stage.closedDoorAt(to) && actor.openableDoor()) {
+      stage.openDoorAt(to);
+    } else if (stage.walkableAt(to)) {
       actor.move(dir);
       return;
     }
@@ -91,15 +93,21 @@ game.AI.prototype.chase = function(actor, point) {
 };
 
 game.AI.prototype.randomMove = function(actor) {
-  var stage = this._game.stage();
-  var directions = [];
-  for (var i=0; i<rll.Direction.AROUND.length; i++) {
-    var dir = rll.Direction.AROUND[i];
+  var stage = this._game.stage(),
+      directions = [], i, dir, to;
+  for (i=0; i<rll.Direction.AROUND.length; i++) {
+    dir = rll.Direction.AROUND[i];
     if (stage.walkableAt(actor.movedPoint(dir))) {
       directions.push(dir);
     }
   }
-  actor.move(directions.choiceAtRandom());
+  dir = directions.choiceAtRandom();
+  to = actor.movedPoint(dir);
+  if (stage.closedDoorAt(to) && actor.openableDoor()) {
+    stage.openDoorAt(to);
+  } else {
+    actor.move(dir);
+  }
 };
 
 game.Game = function() {
@@ -158,7 +166,7 @@ game.Game.prototype.newLevel = function() {
     var m;
     switch(rll.random(0, 5)) {
     case 0:
-      m = new rll.Monster({
+      m = new rll.Humanoid({
         name      :'オーク',
         glyph     :'o',
         color     :'#0f0',
@@ -168,7 +176,7 @@ game.Game.prototype.newLevel = function() {
       });
       break;
     case 1:
-      m = new rll.Monster({
+      m = new rll.Humanoid({
         name      :'ゴブリン',
         glyph     :'g',
         color     :'#66f',
