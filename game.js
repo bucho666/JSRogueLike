@@ -3,6 +3,32 @@ var game = game || {};
 
 game.keyEvent = new rll.KeyEvent();
 
+game.DIRECITON_KEY = {};
+game.DIRECITON_KEY[rll.key.H] = rll.Direction.W;
+game.DIRECITON_KEY[rll.key.L] = rll.Direction.E;
+game.DIRECITON_KEY[rll.key.K] = rll.Direction.N;
+game.DIRECITON_KEY[rll.key.J] = rll.Direction.S;
+game.DIRECITON_KEY[rll.key.Y] = rll.Direction.NW;
+game.DIRECITON_KEY[rll.key.U] = rll.Direction.NE;
+game.DIRECITON_KEY[rll.key.B] = rll.Direction.SW;
+game.DIRECITON_KEY[rll.key.N] = rll.Direction.SE;
+game.DIRECITON_KEY[rll.key.PERIOD] = rll.Direction.HERE;
+
+game.DIRECITON_KEY[rll.key.NUMPAD4] = rll.Direction.W;
+game.DIRECITON_KEY[rll.key.NUMPAD6] = rll.Direction.E;
+game.DIRECITON_KEY[rll.key.NUMPAD8] = rll.Direction.N;
+game.DIRECITON_KEY[rll.key.NUMPAD2] = rll.Direction.S;
+game.DIRECITON_KEY[rll.key.NUMPAD7] = rll.Direction.NW;
+game.DIRECITON_KEY[rll.key.NUMPAD9] = rll.Direction.NE;
+game.DIRECITON_KEY[rll.key.NUMPAD1] = rll.Direction.SW;
+game.DIRECITON_KEY[rll.key.NUMPAD3] = rll.Direction.SE;
+game.DIRECITON_KEY[rll.key.NUMPAD5] = rll.Direction.HERE;
+
+game.DIRECITON_KEY[rll.key.LEFT] = rll.Direction.W;
+game.DIRECITON_KEY[rll.key.RIGHT] = rll.Direction.E;
+game.DIRECITON_KEY[rll.key.UP] = rll.Direction.N;
+game.DIRECITON_KEY[rll.key.DOWN] = rll.Direction.S;
+
 game.AI = function(game) {
   this._game = game;
   this._lastDest = null;
@@ -83,32 +109,6 @@ game.Game = function() {
   this._stage   = new rll.Stage(new rll.Size(80, 21), 0);
   this._messages = new rll.Messages();
 };
-
-game.Game.prototype._dirKey = {};
-game.Game.prototype._dirKey[rll.key.H] = rll.Direction.W;
-game.Game.prototype._dirKey[rll.key.L] = rll.Direction.E;
-game.Game.prototype._dirKey[rll.key.K] = rll.Direction.N;
-game.Game.prototype._dirKey[rll.key.J] = rll.Direction.S;
-game.Game.prototype._dirKey[rll.key.Y] = rll.Direction.NW;
-game.Game.prototype._dirKey[rll.key.U] = rll.Direction.NE;
-game.Game.prototype._dirKey[rll.key.B] = rll.Direction.SW;
-game.Game.prototype._dirKey[rll.key.N] = rll.Direction.SE;
-game.Game.prototype._dirKey[rll.key.PERIOD] = rll.Direction.HERE;
-
-game.Game.prototype._dirKey[rll.key.NUMPAD4] = rll.Direction.W;
-game.Game.prototype._dirKey[rll.key.NUMPAD6] = rll.Direction.E;
-game.Game.prototype._dirKey[rll.key.NUMPAD8] = rll.Direction.N;
-game.Game.prototype._dirKey[rll.key.NUMPAD2] = rll.Direction.S;
-game.Game.prototype._dirKey[rll.key.NUMPAD7] = rll.Direction.NW;
-game.Game.prototype._dirKey[rll.key.NUMPAD9] = rll.Direction.NE;
-game.Game.prototype._dirKey[rll.key.NUMPAD1] = rll.Direction.SW;
-game.Game.prototype._dirKey[rll.key.NUMPAD3] = rll.Direction.SE;
-game.Game.prototype._dirKey[rll.key.NUMPAD5] = rll.Direction.HERE;
-
-game.Game.prototype._dirKey[rll.key.LEFT] = rll.Direction.W;
-game.Game.prototype._dirKey[rll.key.RIGHT] = rll.Direction.E;
-game.Game.prototype._dirKey[rll.key.UP] = rll.Direction.N;
-game.Game.prototype._dirKey[rll.key.DOWN] = rll.Direction.S;
 
 game.Game.prototype.stage = function() {
   return this._stage;
@@ -226,13 +226,29 @@ game.Game.prototype.handleEvent = function(e) {
     if (this._stage.downableAt(this._player.point())) {
       this.newLevel();
     }
-  } else if (key in this._dirKey) {
+  } else if (key in game.DIRECITON_KEY) {
     if (onShift) {
-      this.runPlayer(this._dirKey[key]);
-    } else if (this.movePlayer(this._dirKey[key])) {
+      this.runPlayer(game.DIRECITON_KEY[key]);
+    } else if (this.movePlayer(game.DIRECITON_KEY[key])) {
       this._pickupMoney();
       this.actorsAction();
     }
+  } else if (key === rll.key.C) {
+      this.message('ドアを閉める: 方向?');
+      (new game.chooseDirection(function(direction){
+        var to = this._player.movedPoint(direction),
+            actor = this._stage.findActor(to);
+        if (actor) {
+          this.message(actor.name() + 'がいる!');
+        } else if (this._stage.openedDoorAt(to)) {
+          this._stage.closeDoorAt(to);
+          this.actorsAction();
+        } else {
+          this.message('その方向に閉められるドアは無い。');
+        }
+        this.draw();
+      }.bind(this))).execute();
+
   } else {
     return;
   }
@@ -384,6 +400,23 @@ game.MeleeAttack.prototype.damage = function() {
   var damagePoint = this._attaker.attackDamage();
   this._defender.damage(damagePoint);
   return damagePoint;
+};
+
+game.chooseDirection = function(action) {
+  this._action = action;
+  this._beforeEvent = game.keyEvent.current();
+};
+
+game.chooseDirection.prototype.execute = function() {
+  game.keyEvent.set(this);
+};
+
+game.chooseDirection.prototype.handleEvent = function(e) {
+  var key = e.keyCode, direction;
+  direction = game.DIRECITON_KEY[key];
+  if (direction === undefined) return;
+  this._action(direction);
+  game.keyEvent.set(this._beforeEvent);
 };
 
 game.More = function(messages, display) {

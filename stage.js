@@ -150,8 +150,8 @@ rll.Stage.prototype.closeDoorAt = function(point) {
   this._terrain.closeDoorAt(point);
 };
 
-rll.Stage.prototype.opendDoorAt = function(point) {
-  return this._terrain.opendDoorAt(point);
+rll.Stage.prototype.openedDoorAt = function(point) {
+  return this._terrain.openedDoorAt(point);
 };
 
 rll.Stage.prototype.openDoorAt = function(point) {
