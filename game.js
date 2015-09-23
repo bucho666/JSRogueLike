@@ -97,15 +97,17 @@ game.AI.prototype.randomMove = function(actor) {
       directions = [], i, dir, to;
   for (i=0; i<rll.Direction.AROUND.length; i++) {
     dir = rll.Direction.AROUND[i];
-    if (stage.walkableAt(actor.movedPoint(dir))) {
+    to = actor.movedPoint(dir);
+    if (stage.walkableAt(to) || stage.closedDoorAt(to)) {
       directions.push(dir);
     }
   }
+  if (directions.length === 0) return;
   dir = directions.choiceAtRandom();
   to = actor.movedPoint(dir);
   if (stage.closedDoorAt(to) && actor.openableDoor()) {
     stage.openDoorAt(to);
-  } else {
+  } else if (stage.walkableAt(to)) {
     actor.move(dir);
   }
 };
