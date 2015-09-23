@@ -44,7 +44,7 @@ game.AI.prototype.compute = function(actor) {
     this.attackToPlayer(actor, player);
     return;
   }
-  if (this.canSee(actor, playerPoint)) {
+  if (this.lookable(actor, playerPoint)) {
     this._lastDest = playerPoint;
     this.chase(actor, playerPoint);
   } else if (this._lastDest) {
@@ -66,7 +66,7 @@ game.AI.prototype.attackToPlayer = function(actor, player) {
   this._game.message('あなたは死んだ…');
 };
 
-game.AI.prototype.canSee = function(actor, point) {
+game.AI.prototype.lookable = function(actor, point) {
   var stage = this._game.stage();
   var line = actor.lineTo(point);
   for (var i=0; i<line.length; i++) {
@@ -102,7 +102,7 @@ game.AI.prototype.randomMove = function(actor) {
       directions.push(dir);
     }
   }
-  if (directions.length === 0) return;
+  if (directions.isEmpty()) return;
   dir = directions.choiceAtRandom();
   to = actor.movedPoint(dir);
   if (stage.closedDoorAt(to) && actor.openableDoor()) {

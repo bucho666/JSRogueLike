@@ -34,7 +34,7 @@ rll.Messages.prototype.draw = function(display) {
 };
 
 rll.Messages.prototype.isEmpty = function() {
-  return this._messages.length === 0;
+  return this._messages.isEmpty();
 };
 
 rll.KeyEvent = function() {

@@ -166,7 +166,7 @@ rll.Display.prototype._write = function(point, glyph, color) {
 
 rll.Display.prototype.flush = function() {
   window.requestAnimationFrame(this.flush);
-  if (Object.keys(this._dirty).length === 0) return;
+  if (Object.keys(this._dirty).isEmpty()) return;
   for (var key in this._dirty) {
     if (key in this._grids && this._grids[key].equal(this._dirty[key])) {
       continue;

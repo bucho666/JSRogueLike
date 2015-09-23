@@ -99,6 +99,11 @@ Object.defineProperty(Array.prototype, 'min', {
   return object;
 }});
 
+Object.defineProperty(Array.prototype, 'isEmpty', {
+  value: function() {
+  return this.length === 0;
+}});
+
 rll.Point = function(x, y) {
   this._x = x;
   this._y = y;
