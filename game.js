@@ -230,6 +230,10 @@ game.Game.prototype.handleEvent = function(e) {
         }
         this.draw();
       }.bind(this))).execute();
+  } else if (key === rll.key.A && onShift) {
+    this._player.levelUp();
+  } else if (key === rll.key.Z && onShift) {
+    this.newLevel();
   } else {
     return;
   }
