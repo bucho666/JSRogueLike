@@ -167,9 +167,21 @@ rll.Player = function(character, name) {
   this._level = 1;
   this._exp = new rll.State(2000, 0);
   this._armorClass = 6;
+  this._items = []; // TODO クラス化
   this.setAction(new rll.Player.AutoHeal(this));
 };
 inherit(rll.Player, rll.Actor);
+
+rll.Player.prototype.getItem = function(item) {
+  this._items.push(item);
+};
+
+rll.Player.prototype.drawItemList = function(display) {
+  for (var y=0; y<this._items.length; y++) {
+    display.write(new rll.Point(0, y),
+        this._items[y].name());
+  }
+};
 
 rll.Player.prototype.level = function() {
   return this._level;

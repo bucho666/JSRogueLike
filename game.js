@@ -173,6 +173,8 @@ game.Game.prototype.newLevel = function() {
     var diceNum = (Math.floor(this.floor() / 5) + 1) * 6;
     this.putItem(room.insidePointAtRandom(),
       new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100 / 2)));
+    this.putItem(room.insidePointAtRandom(),
+      new rll.Item(new rll.Character('!', '#66f'), '軽傷治癒の水薬'));
   }, this._stage);
   this._stage.addActor(this._player);
   var monsterNum = 2 + parseInt(this._stage.floor() / 3);
@@ -212,9 +214,12 @@ game.Game.prototype.handleEvent = function(e) {
     if (onShift) {
       this.runPlayer(game.DIRECITON_KEY[key]);
     } else if (this.movePlayer(game.DIRECITON_KEY[key])) {
-      this._pickupMoney();
+      this._autoPickup();
       this.actorsAction();
     }
+  } else if (key === rll.key.I) {
+    (new game.ChooseItem(this._player, this._display)).execute();
+    return;
   } else if (key === rll.key.C) {
       this.message('ドアを閉める: 方向?');
       (new game.chooseDirection(function(direction){
@@ -265,9 +270,18 @@ game.Game.prototype.movePlayer = function(direction) {
   return true;
 };
 
-game.Game.prototype._pickupMoney = function() {
-  var money = this._stage.pickupItem(this._player.point());
-  if (money === undefined) return false;
+game.Game.prototype._autoPickup = function() {
+  var item = this._stage.pickupItem(this._player.point());
+  if (item === undefined) return false;
+  if (item.isMoney()) {
+    return this._pickupMoney(item);
+  }
+  this.message(item.name()+'を手に入れた。');
+  this._player.getItem(item);
+  return true;
+};
+
+game.Game.prototype._pickupMoney = function(money) {
   this._player.getMoney(money);
   this.message('銀貨を'+money.value()+'枚手に入れた。');
   if ( this._player.expIsFull()) {
@@ -348,7 +362,7 @@ game.Game.prototype.runPlayer = function(direction) {
     if (this.movePlayer(direction) === false) break;
     this.actorsAction();
     this._sight.scan(this._player.point(), this._stage);
-    if (this._pickupMoney()) break;
+    if (this._autoPickup()) break;
     if (this._stage.downableAt(this._player.point())) break;
     if (runner.mustStop()) break;
     direction = runner.direction();
@@ -378,7 +392,7 @@ game.MeleeAttack.prototype.isHit = function() {
   var rolls = rll.random(1, 20);
   if (rolls === 20) return true;
   if (rolls === 1 ) return false;
-  return rolls < (this._defender.armorClass() + this._attaker.toHit());
+  return rolls <= (this._defender.armorClass() + this._attaker.toHit());
 };
 
 game.MeleeAttack.prototype.damage = function() {
@@ -416,10 +430,30 @@ game.More.prototype.execute = function() {
 
 game.More.prototype.handleEvent = function(e) {
   if (e.keyCode != rll.key.SPACE) return;
-  this._messages.draw(this._display);
-  if (this._messages.isEmpty()) {
+  this._messages.draw(this._display); if (this._messages.isEmpty()) {
     game.keyEvent.set(this._beforeEvent);
   }
+};
+
+game.ChooseItem = function(player, display) {
+  this._display = display;
+  this._player = player;
+  this._beforeEvent = game.keyEvent.current();
+};
+
+game.ChooseItem.prototype.execute = function() {
+  this.draw();
+  game.keyEvent.set(this);
+};
+
+game.ChooseItem.prototype.handleEvent = function(e) {
+  if (e.keyCode != rll.key.SPACE) return;
+  this._beforeEvent.draw();
+  game.keyEvent.set(this._beforeEvent);
+};
+
+game.ChooseItem.prototype.draw = function() {
+  this._player.drawItemList(this._display);
 };
 
 game.MonsterList = function(level) {
