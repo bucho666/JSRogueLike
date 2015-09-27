@@ -128,6 +128,10 @@ game.Game.prototype.player = function() {
   return this._player;
 };
 
+game.Game.prototype.display = function() {
+  return this._display;
+};
+
 game.Game.prototype.run = function() {
   this._display.initialize();
   document.body.appendChild(this._display.getCanvas());
@@ -218,7 +222,7 @@ game.Game.prototype.handleEvent = function(e) {
       this.actorsAction();
     }
   } else if (key === rll.key.I) {
-    (new game.ChooseItem(this._player, this._display)).execute();
+    (new game.ChooseItem(this)).execute();
     return;
   } else if (key === rll.key.C) {
       this.message('ドアを閉める: 方向?');
@@ -435,9 +439,11 @@ game.More.prototype.handleEvent = function(e) {
   }
 };
 
-game.ChooseItem = function(player, display) {
-  this._display = display;
-  this._player = player;
+// TODO Sceneクラス検討
+
+game.ChooseItem = function(thisGame) {
+  this._display = thisGame.display();
+  this._player = thisGame.player();
   this._beforeEvent = game.keyEvent.current();
 };
 
