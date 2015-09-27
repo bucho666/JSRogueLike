@@ -177,8 +177,12 @@ rll.Player.prototype.getItem = function(item) {
 rll.Player.prototype.drawItemList = function(display) {
   for (var y=0; y<this._items.length; y++) {
     display.write(new rll.Point(0, y),
-        this._items[y].name());
+        this._items[y].name(), '#fff', '#080');
   }
+};
+
+rll.Player.prototype.hasItem = function() {
+  return this._items.isEmpty() === false;
 };
 
 rll.Player.prototype.level = function() {

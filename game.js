@@ -222,8 +222,11 @@ game.Game.prototype.handleEvent = function(e) {
       this.actorsAction();
     }
   } else if (key === rll.key.I) {
-    (new game.ChooseItem(this)).execute();
-    return;
+    if (this._player.hasItem()) {
+      (new game.ChooseItem(this)).execute();
+      return;
+    }
+    this.message('何も持っていない。');
   } else if (key === rll.key.C) {
       this.message('ドアを閉める: 方向?');
       (new game.chooseDirection(function(direction){
