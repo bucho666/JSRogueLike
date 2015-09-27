@@ -463,8 +463,9 @@ game.ChooseItem.prototype.handleEvent = function(e) {
     this.cancel();
     return;
   } else if (key == rll.key.RETURN) {
-    this.cancel();
+    this._player.useItem(this._game);
     this._game.actorsAction();
+    this.cancel();
     return;
   } else if (key in game.DIRECITON_KEY === false) {
     return;

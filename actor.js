@@ -183,11 +183,23 @@ rll.ItemList.prototype.isEmpty = function() {
 };
 
 rll.ItemList.prototype.nextCursor = function() {
-  this._cursor = (this._cursor + 1) % this._items.length;
+  this._cursor += 1;
+  this._adjustCursor();
 };
 
 rll.ItemList.prototype.prevCursor = function() {
-  this._cursor = (this._cursor - 1 + this._items.length) % this._items.length;
+  this._cursor -= 1;
+  this._adjustCursor();
+};
+
+rll.ItemList.prototype.useSelectedItem = function(game) {
+  this._items[this._cursor].use(game);
+  this._items.splice(this._cursor, 1);
+  this._adjustCursor();
+};
+
+rll.ItemList.prototype._adjustCursor = function() {
+  this._cursor = (this._cursor + this._items.length) % this._items.length;
 };
 
 rll.Player = function(character, name) {
@@ -202,6 +214,10 @@ inherit(rll.Player, rll.Actor);
 
 rll.Player.prototype.getItem = function(item) {
   this._items.add(item);
+};
+
+rll.Player.prototype.useItem = function(game) {
+  this._items.useSelectedItem(game);
 };
 
 rll.Player.prototype.drawItemList = function(display) {

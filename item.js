@@ -4,6 +4,10 @@ rll.Item = function(character, name) {
 };
 inherit(rll.Item, rll.Entity);
 
+rll.Item.prototype.use = function(game) {
+  game.message(this.name() + 'を使った。');
+};
+
 rll.Item.prototype.isMoney = function() {
   return false;
 };
