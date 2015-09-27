@@ -87,10 +87,7 @@ rll.Actor.prototype.action = function() {
 
 rll.Actor.prototype.draw = function(display, point) {
   if (point === undefined) point = new rll.Point(0, 0);
-  display.write(this._point.add(point),
-      this._character.glyph(),
-      this._character.color(),
-      this._character.backgroundColor());
+  display.writeCharacter(this._point.add(point), this._character);
 };
 
 rll.Actor.prototype.move = function(direction) {

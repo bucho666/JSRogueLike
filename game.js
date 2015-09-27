@@ -114,7 +114,7 @@ game.AI.prototype.randomMove = function(actor) {
 
 game.Game = function() {
   this._display = new rll.Display();
-  this._player  = new rll.Player(new rll.Character('@', '#fff'), 'player');
+  this._player  = new rll.Player(new rll.Character('@', '#fff', '#000'), 'player');
   this._sight   = new rll.Sight(this._player, new rll.Size(80, 21));
   this._stage   = new rll.Stage(new rll.Size(80, 21), 0);
   this._messages = new rll.Messages();

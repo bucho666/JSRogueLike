@@ -147,7 +147,7 @@ rll.Display.prototype.getCanvas = function() {
 rll.Display.prototype.write = function(point, string, color, backgroundColor) {
   var write_color = color || '#ccc', cc;
   for (var i=0; i<string.length; i++) {
-    this._write(point, string[i], write_color, backgroundColor);
+    this.writeCharacter(point, new rll.Character(string[i], write_color, backgroundColor));
     point = point.add(rll.Direction.RIGHT);
     cc = new rll.CharacterCode(string.charCodeAt(i));
     if (cc.isWide() === false) continue;
@@ -161,8 +161,8 @@ rll.Display.prototype._clearCache = function(point) {
   if (point in this._grids) delete this._grids[point];
 };
 
-rll.Display.prototype._write = function(point, glyph, color, backgroundColor) {
-  var grid = new rll.Grid(point, new rll.Character(glyph, color, backgroundColor));
+rll.Display.prototype.writeCharacter = function(point, character) {
+  var grid = new rll.Grid(point, character);
   if (point in this._dirty && this._dirty[point].equal(grid)) {
     return;
   }
