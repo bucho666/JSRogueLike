@@ -13,4 +13,5 @@ game.CureLightWounds.prototype.apply = function() {
   this._game.message(point+'ポイント回復した!');
 };
 
-// TODO ポーションを定数化
+game.potion = {};
+game.potion.CureLightWounds = new rll.Potion('軽傷治癒の水薬', game.CureLightWounds, '#66f');

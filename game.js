@@ -172,10 +172,7 @@ game.Game.prototype.newLevel = function() {
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
       generator.roomInsidePointAtRandom());
   this._player.setPoint(generator.roomInsidePointAtRandom());
-  // TODO リファクタリング
-  var potion = new rll.Potion('軽傷治癒の水薬', game.CureLightWounds, '#66f');
-  this._player.getItem(potion);
-  this._player.getItem(potion);
+  var potion = game.potion.CureLightWounds;
   // TODO 宝生成を調整(ポーションor金)
   generator.forEachRoom(function(room) {
     if (rll.cointoss()) return;
