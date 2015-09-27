@@ -172,17 +172,20 @@ game.Game.prototype.newLevel = function() {
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
       generator.roomInsidePointAtRandom());
   this._player.setPoint(generator.roomInsidePointAtRandom());
+  // TODO リファクタリング
   var potion = new rll.Potion('軽傷治癒の水薬', game.CureLightWounds, '#66f');
   this._player.getItem(potion);
   this._player.getItem(potion);
+  // TODO 宝生成を調整(ポーションor金)
   generator.forEachRoom(function(room) {
     if (rll.cointoss()) return;
     var diceNum = (Math.floor(this.floor() / 5) + 1) * 6;
-    this.putItem(room.insidePointAtRandom(),
-      new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100 / 2)));
-    this.putItem(room.insidePointAtRandom(), potion);
+    this.putItem(new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100 / 2)),
+      room.insidePointAtRandom());
+    this.putItem(potion, room.insidePointAtRandom());
   }, this._stage);
   this._stage.addActor(this._player);
+  // TODO モンスターを部屋のみに配置するよう修正
   var monsterNum = 2 + parseInt(this._stage.floor() / 3);
   var monsterList = new game.MonsterList(1+Math.floor(this._stage.floor() / 6));
   for (i=0; i<monsterNum; i++) {
@@ -285,6 +288,12 @@ game.Game.prototype._autoPickup = function() {
   if (item.isMoney()) {
     return this._pickupMoney(item);
   }
+  if (this._player.itemIsFull()) {
+    this.message('これ以上持てない!');
+    this._stage.putItem(item, this._player.point());
+    return true;
+  }
+  // TODO アイテムを捨てる機能を実装
   this.message(item.name()+'を手に入れた。');
   this._player.getItem(item);
   return true;

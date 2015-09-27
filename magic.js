@@ -12,3 +12,5 @@ game.CureLightWounds.prototype.apply = function() {
   this._player.heal(point);
   this._game.message(point+'ポイント回復した!');
 };
+
+// TODO ポーションを定数化

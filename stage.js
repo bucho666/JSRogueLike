@@ -65,7 +65,7 @@ rll.Stage.prototype.item = function(point) {
   return this._item[point];
 };
 
-rll.Stage.prototype.putItem = function(point, item) {
+rll.Stage.prototype.putItem = function(item, point) {
   this._item[point] = item;
 };
 

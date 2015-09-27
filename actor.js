@@ -160,7 +160,8 @@ rll.Humanoid.prototype.openableDoor = function() {
   return true;
 };
 
-rll.ItemList = function() {
+rll.ItemList = function(limit) {
+  this._limit = limit;
   this._items = [];
   this._cursor = 0;
 };
@@ -180,6 +181,10 @@ rll.ItemList.prototype.draw = function(display) {
 
 rll.ItemList.prototype.isEmpty = function() {
   return this._items.isEmpty();
+};
+
+rll.ItemList.prototype.isFull = function() {
+  return this._items.length >= this._limit;
 };
 
 rll.ItemList.prototype.nextCursor = function() {
@@ -207,7 +212,7 @@ rll.Player = function(character, name) {
   this._level = 1;
   this._exp = new rll.State(2000, 0);
   this._armorClass = 6;
-  this._items = new rll.ItemList();
+  this._items = new rll.ItemList(8);
   this.setAction(new rll.Player.AutoHeal(this));
 };
 inherit(rll.Player, rll.Actor);
@@ -218,6 +223,10 @@ rll.Player.prototype.getItem = function(item) {
 
 rll.Player.prototype.useItem = function(game) {
   this._items.useSelectedItem(game);
+};
+
+rll.Player.prototype.itemIsFull = function() {
+  return this._items.isFull();
 };
 
 rll.Player.prototype.drawItemList = function(display) {
