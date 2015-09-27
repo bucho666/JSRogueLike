@@ -12,9 +12,10 @@ rll.Font.prototype.size = function() {
   return this._fontSize;
 };
 
-rll.Character = function(glyph, color) {
+rll.Character = function(glyph, color, backgroundColor) {
   this._glyph = glyph;
   this._color = color;
+  this._backgroundColor = backgroundColor || '#000';
   this._dark = null;
 };
 
@@ -26,9 +27,14 @@ rll.Character.prototype.color = function() {
   return this._color;
 };
 
+rll.Character.prototype.backgroundColor = function() {
+  return this._backgroundColor;
+};
+
 rll.Character.prototype.equal = function(other) {
   return (this._glyph == other._glyph &&
-          this._color == other._color);
+          this._color == other._color &&
+          this._backgroundColor == other.backgroundColor);
 };
 
 rll.Character.prototype.code = function() {
@@ -71,7 +77,6 @@ rll.Grid = function(point, ch) {
 };
 
 rll.Grid._size = null;
-rll.Grid.prototype._backGroundColor = '#000';
 rll.Grid.prototype._wideFont = new rll.Font('Osaka', 12);
 rll.Grid.setSize = function(newSize) {
   rll.Grid._size = newSize;
@@ -89,7 +94,7 @@ rll.Grid.prototype.draw = function(context) {
   var cc = new rll.CharacterCode(this._character.code());
   var isWide = cc.isWide();
   if (isWide) w *= 2;
-  context.fillStyle = this._backGroundColor;
+  context.fillStyle = this._character.backgroundColor();
   context.fillRect(x, y, w, h);
   context.fillStyle = this._character.color();
   var orgFont = context.font;
@@ -139,10 +144,10 @@ rll.Display.prototype.getCanvas = function() {
   return this._context.canvas;
 };
 
-rll.Display.prototype.write = function(point, string, color) {
+rll.Display.prototype.write = function(point, string, color, backgroundColor) {
   var write_color = color || '#ccc', cc;
   for (var i=0; i<string.length; i++) {
-    this._write(point, string[i], write_color);
+    this.writeCharacter(point, new rll.Character(string[i], write_color, backgroundColor));
     point = point.add(rll.Direction.RIGHT);
     cc = new rll.CharacterCode(string.charCodeAt(i));
     if (cc.isWide() === false) continue;
@@ -156,8 +161,8 @@ rll.Display.prototype._clearCache = function(point) {
   if (point in this._grids) delete this._grids[point];
 };
 
-rll.Display.prototype._write = function(point, glyph, color) {
-  var grid = new rll.Grid(point, new rll.Character(glyph, color));
+rll.Display.prototype.writeCharacter = function(point, character) {
+  var grid = new rll.Grid(point, character);
   if (point in this._dirty && this._dirty[point].equal(grid)) {
     return;
   }
@@ -180,7 +185,7 @@ rll.Display.prototype.flush = function() {
 rll.Display.prototype.clear = function() {
   var w = this._context.canvas.width;
   var h = this._context.canvas.height;
-  this._context.fillStyle = rll.Grid._backGroundColor;
+  this._context.fillStyle = rll.Grid._backgroundColor;
   this._context.fillRect(0, 0, w, h);
   this._grids = {};
   this._dirty = {};

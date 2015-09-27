@@ -114,7 +114,7 @@ game.AI.prototype.randomMove = function(actor) {
 
 game.Game = function() {
   this._display = new rll.Display();
-  this._player  = new rll.Player(new rll.Character('@', '#fff'), 'player');
+  this._player  = new rll.Player(new rll.Character('@', '#fff', '#000'), 'player');
   this._sight   = new rll.Sight(this._player, new rll.Size(80, 21));
   this._stage   = new rll.Stage(new rll.Size(80, 21), 0);
   this._messages = new rll.Messages();
@@ -126,6 +126,10 @@ game.Game.prototype.stage = function() {
 
 game.Game.prototype.player = function() {
   return this._player;
+};
+
+game.Game.prototype.display = function() {
+  return this._display;
 };
 
 game.Game.prototype.run = function() {
@@ -140,7 +144,6 @@ game.Game.prototype.newLevel = function() {
   this._sight.clear();
   var newFloor = this._stage.floor() + 1;
   var mapSize = new rll.Size(80, 21);
-  var i;
   this._stage = new rll.Stage(mapSize, newFloor);
   var generator = new rll.Generator(mapSize);
   generator.generate();
@@ -168,20 +171,48 @@ game.Game.prototype.newLevel = function() {
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
       generator.roomInsidePointAtRandom());
   this._player.setPoint(generator.roomInsidePointAtRandom());
-  generator.forEachRoom(function(room) {
-    if (rll.cointoss()) return;
-    var diceNum = (Math.floor(this.floor() / 5) + 1) * 6;
-    this.putItem(room.insidePointAtRandom(),
-      new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100 / 2)));
-  }, this._stage);
   this._stage.addActor(this._player);
-  var monsterNum = 2 + parseInt(this._stage.floor() / 3);
+  generator.forEachRoom(function(room) {
+    this.makeRoom(room);
+  }, this);
+  this._player.getItem(game.potion.CureLightWounds);
+  this._player.getItem(game.potion.CureLightWounds);
+};
+
+game.Game.prototype.makeRoom = function(room) {
+  var dice = new rll.Dice('1d6');
+  var roll = dice.roll();
+  if (roll === 3) {
+    dice = new rll.Dice('1d3');
+  } else if (roll >= 4) {
+    this.putMonster(room);
+    dice = new rll.Dice('1d2');
+  }
+  if (dice.roll() === 1) {
+    this.putTreasure(room);
+  }
+};
+
+game.Game.prototype.putMonster = function(room) {
+  var max = 1 + parseInt(this._stage.floor() / 3);
+  var monsterNum = rll.random(1, max);
   var monsterList = new game.MonsterList(1+Math.floor(this._stage.floor() / 6));
-  for (i=0; i<monsterNum; i++) {
+  for (var i=0; i<monsterNum; i++) {
     var m = monsterList.getAtRandom();
-    m.setPoint(this._stage.randomWalkablePoint());
+    m.setPoint(room.insidePointAtRandom());
     m.setAction(new game.AI(this));
     this._stage.addActor(m);
+  }
+};
+
+game.Game.prototype.putTreasure = function(room) {
+  if (rll.random(1, 6) === 1) {
+    var potion = game.potion.CureLightWounds;
+    this._stage.putItem(potion, room.insidePointAtRandom());
+  } else {
+    var diceNum = (Math.floor(this._stage.floor() / 5) + 1) * 6;
+    this._stage.putItem(new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100)),
+    room.insidePointAtRandom());
   }
 };
 
@@ -212,9 +243,15 @@ game.Game.prototype.handleEvent = function(e) {
     if (onShift) {
       this.runPlayer(game.DIRECITON_KEY[key]);
     } else if (this.movePlayer(game.DIRECITON_KEY[key])) {
-      this._pickupMoney();
+      this._autoPickup();
       this.actorsAction();
     }
+  } else if (key === rll.key.I) {
+    if (this._player.hasItem()) {
+      (new game.ChooseItem(this)).execute();
+      return;
+    }
+    this.message('何も持っていない。');
   } else if (key === rll.key.C) {
       this.message('ドアを閉める: 方向?');
       (new game.chooseDirection(function(direction){
@@ -265,9 +302,24 @@ game.Game.prototype.movePlayer = function(direction) {
   return true;
 };
 
-game.Game.prototype._pickupMoney = function() {
-  var money = this._stage.pickupItem(this._player.point());
-  if (money === undefined) return false;
+game.Game.prototype._autoPickup = function() {
+  var item = this._stage.pickupItem(this._player.point());
+  if (item === undefined) return false;
+  if (item.isMoney()) {
+    return this._pickupMoney(item);
+  }
+  if (this._player.itemIsFull()) {
+    this.message('これ以上持てない!');
+    this._stage.putItem(item, this._player.point());
+    return true;
+  }
+  // TODO アイテムを捨てる機能を実装
+  this.message(item.name()+'を手に入れた。');
+  this._player.getItem(item);
+  return true;
+};
+
+game.Game.prototype._pickupMoney = function(money) {
   this._player.getMoney(money);
   this.message('銀貨を'+money.value()+'枚手に入れた。');
   if ( this._player.expIsFull()) {
@@ -348,7 +400,7 @@ game.Game.prototype.runPlayer = function(direction) {
     if (this.movePlayer(direction) === false) break;
     this.actorsAction();
     this._sight.scan(this._player.point(), this._stage);
-    if (this._pickupMoney()) break;
+    if (this._autoPickup()) break;
     if (this._stage.downableAt(this._player.point())) break;
     if (runner.mustStop()) break;
     direction = runner.direction();
@@ -416,10 +468,53 @@ game.More.prototype.execute = function() {
 
 game.More.prototype.handleEvent = function(e) {
   if (e.keyCode != rll.key.SPACE) return;
-  this._messages.draw(this._display);
-  if (this._messages.isEmpty()) {
+  this._messages.draw(this._display); if (this._messages.isEmpty()) {
     game.keyEvent.set(this._beforeEvent);
   }
+};
+
+// TODO Sceneクラス検討
+
+game.ChooseItem = function(thisGame) {
+  this._game = thisGame;
+  this._player = thisGame.player();
+  this._beforeEvent = game.keyEvent.current();
+};
+
+game.ChooseItem.prototype.execute = function() {
+  this.draw();
+  game.keyEvent.set(this);
+};
+
+game.ChooseItem.prototype.handleEvent = function(e) {
+  var key = e.keyCode;
+  if (key == rll.key.ESCAPE) {
+    this.cancel();
+    return;
+  } else if (key == rll.key.RETURN) {
+    this._player.useItem(this._game);
+    this._game.actorsAction();
+    this.cancel();
+    return;
+  } else if (key in game.DIRECITON_KEY === false) {
+    return;
+  } else if (game.DIRECITON_KEY[key] === rll.Direction.S) {
+    this._player.selectNextItem();
+  } else if (game.DIRECITON_KEY[key] === rll.Direction.N) {
+    this._player.selectPrevItem();
+  } else {
+    return;
+  }
+  this.draw();
+};
+
+game.ChooseItem.prototype.cancel = function() {
+  this._beforeEvent.draw();
+  game.keyEvent.set(this._beforeEvent);
+};
+
+game.ChooseItem.prototype.draw = function() {
+  this._player.drawItemList(this._game.display());
 };
 
 game.MonsterList = function(level) {

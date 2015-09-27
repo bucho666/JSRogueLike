@@ -87,9 +87,7 @@ rll.Actor.prototype.action = function() {
 
 rll.Actor.prototype.draw = function(display, point) {
   if (point === undefined) point = new rll.Point(0, 0);
-  display.write(this._point.add(point),
-      this._character.glyph(),
-      this._character.color());
+  display.writeCharacter(this._point.add(point), this._character);
 };
 
 rll.Actor.prototype.move = function(direction) {
@@ -162,14 +160,94 @@ rll.Humanoid.prototype.openableDoor = function() {
   return true;
 };
 
+rll.ItemList = function(limit) {
+  this._limit = limit;
+  this._items = [];
+  this._cursor = 0;
+};
+
+rll.ItemList.prototype.add = function(newItem) {
+  this._items.push(newItem);
+};
+
+rll.ItemList.prototype.draw = function(display) {
+  var backgroundColor;
+  for (var y=0; y<this._items.length; y++) {
+    backgroundColor = this._cursor === y ? '#080' : '#000';
+    display.write(new rll.Point(0, y),
+        this._items[y].name(), '#fff', backgroundColor);
+  }
+};
+
+rll.ItemList.prototype.isEmpty = function() {
+  return this._items.isEmpty();
+};
+
+rll.ItemList.prototype.isFull = function() {
+  return this._items.length >= this._limit;
+};
+
+rll.ItemList.prototype.nextCursor = function() {
+  this._cursor += 1;
+  this._adjustCursor();
+};
+
+rll.ItemList.prototype.prevCursor = function() {
+  this._cursor -= 1;
+  this._adjustCursor();
+};
+
+rll.ItemList.prototype.useSelectedItem = function(game) {
+  this._items[this._cursor].use(game);
+  this._items.splice(this._cursor, 1);
+  this._adjustCursor();
+};
+
+rll.ItemList.prototype._adjustCursor = function() {
+  if (this._items.isEmpty()) {
+    this._cursor = 0;
+  } else {
+    this._cursor = (this._cursor + this._items.length) % this._items.length;
+  }
+};
+
 rll.Player = function(character, name) {
   rll.Actor.call(this, character, name);
   this._level = 1;
   this._exp = new rll.State(2000, 0);
   this._armorClass = 6;
+  this._items = new rll.ItemList(8);
   this.setAction(new rll.Player.AutoHeal(this));
 };
 inherit(rll.Player, rll.Actor);
+
+rll.Player.prototype.getItem = function(item) {
+  this._items.add(item);
+};
+
+rll.Player.prototype.useItem = function(game) {
+  this._items.useSelectedItem(game);
+};
+
+rll.Player.prototype.itemIsFull = function() {
+  return this._items.isFull();
+};
+
+rll.Player.prototype.drawItemList = function(display) {
+  this._items.draw(display);
+};
+
+rll.Player.prototype.hasItem = function() {
+  return this._items.isEmpty() === false;
+};
+
+rll.Player.prototype.selectNextItem = function() {
+  return this._items.nextCursor();
+};
+
+rll.Player.prototype.selectPrevItem = function() {
+  return this._items.prevCursor();
+};
 
 rll.Player.prototype.level = function() {
   return this._level;

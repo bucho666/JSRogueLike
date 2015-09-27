@@ -9,7 +9,7 @@ rll.Entity.prototype.name = function() {
 };
 
 rll.Entity.prototype.draw = function(display, point) {
-  display.write(point, this._character.glyph(), this._character.color());
+  display.writeCharacter(point, this._character);
 };
 
 rll.Entity.prototype.dark = function() {

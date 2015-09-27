@@ -55,9 +55,9 @@ rll.TerrainMap.prototype.openDoorAt = function(point) {
 };
 
 rll.Stage = function(size, floor) {
+  this._floor = floor;
   this._terrain = new rll.TerrainMap(size);
   this._actors = [];
-  this._floor = floor;
   this._item = {};
 };
 
@@ -65,7 +65,7 @@ rll.Stage.prototype.item = function(point) {
   return this._item[point];
 };
 
-rll.Stage.prototype.putItem = function(point, item) {
+rll.Stage.prototype.putItem = function(item, point) {
   this._item[point] = item;
 };
 
