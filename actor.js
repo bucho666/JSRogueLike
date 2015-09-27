@@ -204,7 +204,11 @@ rll.ItemList.prototype.useSelectedItem = function(game) {
 };
 
 rll.ItemList.prototype._adjustCursor = function() {
-  this._cursor = (this._cursor + this._items.length) % this._items.length;
+  if (this._items.isEmpty()) {
+    this._cursor = 0;
+  } else {
+    this._cursor = (this._cursor + this._items.length) % this._items.length;
+  }
 };
 
 rll.Player = function(character, name) {

@@ -144,7 +144,6 @@ game.Game.prototype.newLevel = function() {
   this._sight.clear();
   var newFloor = this._stage.floor() + 1;
   var mapSize = new rll.Size(80, 21);
-  var i;
   this._stage = new rll.Stage(mapSize, newFloor);
   var generator = new rll.Generator(mapSize);
   generator.generate();
@@ -172,24 +171,48 @@ game.Game.prototype.newLevel = function() {
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
       generator.roomInsidePointAtRandom());
   this._player.setPoint(generator.roomInsidePointAtRandom());
-  var potion = game.potion.CureLightWounds;
-  // TODO 宝生成を調整(ポーションor金)
-  generator.forEachRoom(function(room) {
-    if (rll.cointoss()) return;
-    var diceNum = (Math.floor(this.floor() / 5) + 1) * 6;
-    this.putItem(new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100 / 2)),
-      room.insidePointAtRandom());
-    this.putItem(potion, room.insidePointAtRandom());
-  }, this._stage);
   this._stage.addActor(this._player);
-  // TODO モンスターを部屋のみに配置するよう修正
-  var monsterNum = 2 + parseInt(this._stage.floor() / 3);
+  generator.forEachRoom(function(room) {
+    this.makeRoom(room);
+  }, this);
+  this._player.getItem(game.potion.CureLightWounds);
+  this._player.getItem(game.potion.CureLightWounds);
+};
+
+game.Game.prototype.makeRoom = function(room) {
+  var dice = new rll.Dice('1d6');
+  var roll = dice.roll();
+  if (roll === 3) {
+    dice = new rll.Dice('1d3');
+  } else if (roll >= 4) {
+    this.putMonster(room);
+    dice = new rll.Dice('1d2');
+  }
+  if (dice.roll() === 1) {
+    this.putTreasure(room);
+  }
+};
+
+game.Game.prototype.putMonster = function(room) {
+  var max = 1 + parseInt(this._stage.floor() / 3);
+  var monsterNum = rll.random(1, max);
   var monsterList = new game.MonsterList(1+Math.floor(this._stage.floor() / 6));
-  for (i=0; i<monsterNum; i++) {
+  for (var i=0; i<monsterNum; i++) {
     var m = monsterList.getAtRandom();
-    m.setPoint(this._stage.randomWalkablePoint());
+    m.setPoint(room.insidePointAtRandom());
     m.setAction(new game.AI(this));
     this._stage.addActor(m);
+  }
+};
+
+game.Game.prototype.putTreasure = function(room) {
+  if (rll.random(1, 6) === 1) {
+    var potion = game.potion.CureLightWounds;
+    this._stage.putItem(potion, room.insidePointAtRandom());
+  } else {
+    var diceNum = (Math.floor(this._stage.floor() / 5) + 1) * 6;
+    this._stage.putItem(new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100)),
+    room.insidePointAtRandom());
   }
 };
 
