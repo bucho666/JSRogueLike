@@ -9,9 +9,8 @@ var inherit = function(child, parent) {
 var rll = rll || {};
 
 rll.key = {
-  SPACE: 32,
-  LEFT: 37, UP: 38,
-  RIGHT: 39, DOWN: 40,
+  RETURN: 13, ESCAPE: 27, SPACE: 32,
+  LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40,
   A: 65, B: 66, C: 67,
   D: 68, E: 69, F: 70,
   G: 71, H: 72, I: 73,

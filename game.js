@@ -172,13 +172,15 @@ game.Game.prototype.newLevel = function() {
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
       generator.roomInsidePointAtRandom());
   this._player.setPoint(generator.roomInsidePointAtRandom());
+  var potion = new rll.Item(new rll.Character('!', '#66f'), '軽傷治癒の水薬');
+  this._player.getItem(potion);
+  this._player.getItem(potion);
   generator.forEachRoom(function(room) {
     if (rll.cointoss()) return;
     var diceNum = (Math.floor(this.floor() / 5) + 1) * 6;
     this.putItem(room.insidePointAtRandom(),
       new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100 / 2)));
-    this.putItem(room.insidePointAtRandom(),
-      new rll.Item(new rll.Character('!', '#66f'), '軽傷治癒の水薬'));
+    this.putItem(room.insidePointAtRandom(), potion);
   }, this._stage);
   this._stage.addActor(this._player);
   var monsterNum = 2 + parseInt(this._stage.floor() / 3);
@@ -445,7 +447,7 @@ game.More.prototype.handleEvent = function(e) {
 // TODO Sceneクラス検討
 
 game.ChooseItem = function(thisGame) {
-  this._display = thisGame.display();
+  this._game = thisGame;
   this._player = thisGame.player();
   this._beforeEvent = game.keyEvent.current();
 };
@@ -456,13 +458,33 @@ game.ChooseItem.prototype.execute = function() {
 };
 
 game.ChooseItem.prototype.handleEvent = function(e) {
-  if (e.keyCode != rll.key.SPACE) return;
+  var key = e.keyCode;
+  if (key == rll.key.ESCAPE) {
+    this.cancel();
+    return;
+  } else if (key == rll.key.RETURN) {
+    this.cancel();
+    this._game.actorsAction();
+    return;
+  } else if (key in game.DIRECITON_KEY === false) {
+    return;
+  } else if (game.DIRECITON_KEY[key] === rll.Direction.S) {
+    this._player.selectNextItem();
+  } else if (game.DIRECITON_KEY[key] === rll.Direction.N) {
+    this._player.selectPrevItem();
+  } else {
+    return;
+  }
+  this.draw();
+};
+
+game.ChooseItem.prototype.cancel = function() {
   this._beforeEvent.draw();
   game.keyEvent.set(this._beforeEvent);
 };
 
 game.ChooseItem.prototype.draw = function() {
-  this._player.drawItemList(this._display);
+  this._player.drawItemList(this._game.display());
 };
 
 game.MonsterList = function(level) {

@@ -160,29 +160,64 @@ rll.Humanoid.prototype.openableDoor = function() {
   return true;
 };
 
+rll.ItemList = function() {
+  this._items = [];
+  this._cursor = 0;
+};
+
+rll.ItemList.prototype.add = function(newItem) {
+  this._items.push(newItem);
+};
+
+rll.ItemList.prototype.draw = function(display) {
+  var backgroundColor;
+  for (var y=0; y<this._items.length; y++) {
+    backgroundColor = this._cursor === y ? '#080' : '#000';
+    display.write(new rll.Point(0, y),
+        this._items[y].name(), '#fff', backgroundColor);
+  }
+};
+
+rll.ItemList.prototype.isEmpty = function() {
+  return this._items.isEmpty();
+};
+
+rll.ItemList.prototype.nextCursor = function() {
+  this._cursor = (this._cursor + 1) % this._items.length;
+};
+
+rll.ItemList.prototype.prevCursor = function() {
+  this._cursor = (this._cursor - 1 + this._items.length) % this._items.length;
+};
+
 rll.Player = function(character, name) {
   rll.Actor.call(this, character, name);
   this._level = 1;
   this._exp = new rll.State(2000, 0);
   this._armorClass = 6;
-  this._items = []; // TODO クラス化
+  this._items = new rll.ItemList();
   this.setAction(new rll.Player.AutoHeal(this));
 };
 inherit(rll.Player, rll.Actor);
 
 rll.Player.prototype.getItem = function(item) {
-  this._items.push(item);
+  this._items.add(item);
 };
 
 rll.Player.prototype.drawItemList = function(display) {
-  for (var y=0; y<this._items.length; y++) {
-    display.write(new rll.Point(0, y),
-        this._items[y].name(), '#fff', '#080');
-  }
+  this._items.draw(display);
 };
 
 rll.Player.prototype.hasItem = function() {
   return this._items.isEmpty() === false;
+};
+
+rll.Player.prototype.selectNextItem = function() {
+  return this._items.nextCursor();
+};
+
+rll.Player.prototype.selectPrevItem = function() {
+  return this._items.prevCursor();
 };
 
 rll.Player.prototype.level = function() {
