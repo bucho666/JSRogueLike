@@ -172,7 +172,7 @@ game.Game.prototype.newLevel = function() {
   this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
       generator.roomInsidePointAtRandom());
   this._player.setPoint(generator.roomInsidePointAtRandom());
-  var potion = new rll.Item(new rll.Character('!', '#66f'), '軽傷治癒の水薬');
+  var potion = new rll.Potion('軽傷治癒の水薬', game.CureLightWounds, '#66f');
   this._player.getItem(potion);
   this._player.getItem(potion);
   generator.forEachRoom(function(room) {

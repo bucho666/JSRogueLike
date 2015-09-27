@@ -12,6 +12,16 @@ rll.Item.prototype.isMoney = function() {
   return false;
 };
 
+rll.Potion = function(name, magic, color) {
+  rll.Item.call(this, new rll.Character('!', color), name);
+  this._magic = magic;
+};
+inherit(rll.Potion, rll.Item);
+
+rll.Potion.prototype.use = function(game) {
+  (new this._magic(game)).apply();
+};
+
 rll.Money = function(value) {
   this._value = value;
   rll.Item.call(this, rll.Money.character, '銀貨');
