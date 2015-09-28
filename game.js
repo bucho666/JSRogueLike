@@ -1,4 +1,4 @@
-/*global rll, document*/
+/*global rll, document, inherit*/
 var game = game || {};
 
 game.keyEvent = new rll.KeyEvent();
@@ -118,6 +118,8 @@ game.Game = function() {
   this._sight   = new rll.Sight(this._player, new rll.Size(80, 21));
   this._stage   = new rll.Stage(new rll.Size(80, 21), 0);
   this._messages = new rll.Messages();
+  this._player.getItem(game.potion.CureLightWounds);
+  this._player.getItem(game.potion.CureLightWounds);
 };
 
 game.Game.prototype.stage = function() {
@@ -175,8 +177,6 @@ game.Game.prototype.newLevel = function() {
   generator.forEachRoom(function(room) {
     this.makeRoom(room);
   }, this);
-  this._player.getItem(game.potion.CureLightWounds);
-  this._player.getItem(game.potion.CureLightWounds);
 };
 
 game.Game.prototype.makeRoom = function(room) {
@@ -439,62 +439,85 @@ game.MeleeAttack.prototype.damage = function() {
   return damagePoint;
 };
 
-game.chooseDirection = function(action) {
-  this._action = action;
-  this._beforeEvent = game.keyEvent.current();
+game.Scene = function() {
+  this._beforeScene = game.keyEvent.current();
 };
 
-game.chooseDirection.prototype.execute = function() {
+game.Scene.prototype.execute = function() {
+  this.initialize();
   game.keyEvent.set(this);
 };
+
+game.Scene.prototype.initialize = function() {
+  this.draw();
+};
+
+game.Scene.prototype.draw = function() {};
+
+game.Scene.prototype.end = function() {
+  game.keyEvent.set(this._beforeScene);
+  this._beforeScene.draw();
+};
+
+game.Scene.prototype.handleEvent = function(e) {
+  if (e.keyCode === rll.key.ESCAPE) {
+    this.end();
+  }
+};
+
+game.chooseDirection = function(action) {
+  game.Scene.call(this);
+  this._action = action;
+};
+inherit(game.chooseDirection, game.Scene);
 
 game.chooseDirection.prototype.handleEvent = function(e) {
   var key = e.keyCode, direction;
   direction = game.DIRECITON_KEY[key];
   if (direction === undefined) return;
   this._action(direction);
-  game.keyEvent.set(this._beforeEvent);
+  this.end();
 };
 
 game.More = function(messages, display) {
+  game.Scene.call(this);
   this._messages = messages;
   this._display = display;
-  this._beforeEvent = game.keyEvent.current();
 };
-
-game.More.prototype.execute = function() {
-  game.keyEvent.set(this);
-};
+inherit(game.More, game.Scene);
 
 game.More.prototype.handleEvent = function(e) {
   if (e.keyCode != rll.key.SPACE) return;
-  this._messages.draw(this._display); if (this._messages.isEmpty()) {
-    game.keyEvent.set(this._beforeEvent);
+  this._messages.draw(this._display);
+  if (this._messages.isEmpty()) {
+    this.end();
   }
 };
 
-// TODO Sceneクラス検討
-
-game.ChooseItem = function(thisGame) {
-  this._game = thisGame;
-  this._player = thisGame.player();
-  this._beforeEvent = game.keyEvent.current();
+game.More.prototype.end = function() {
+  game.keyEvent.set(this._beforeScene);
 };
 
-game.ChooseItem.prototype.execute = function() {
-  this.draw();
-  game.keyEvent.set(this);
+game.ChooseItem = function(thisGame) {
+  game.Scene.call(this);
+  this._game = thisGame;
+  this._player = thisGame.player();
+};
+inherit(game.ChooseItem, game.Scene);
+
+game.ChooseItem.prototype.draw = function() {
+  this._player.drawItemList(this._game.display());
 };
 
 game.ChooseItem.prototype.handleEvent = function(e) {
   var key = e.keyCode;
   if (key == rll.key.ESCAPE) {
-    this.cancel();
+    this.end();
     return;
   } else if (key == rll.key.RETURN) {
     this._player.useItem(this._game);
     this._game.actorsAction();
-    this.cancel();
+    this.end();
     return;
   } else if (key in game.DIRECITON_KEY === false) {
     return;
@@ -506,15 +529,6 @@ game.ChooseItem.prototype.handleEvent = function(e) {
     return;
   }
   this.draw();
-};
-
-game.ChooseItem.prototype.cancel = function() {
-  this._beforeEvent.draw();
-  game.keyEvent.set(this._beforeEvent);
-};
-
-game.ChooseItem.prototype.draw = function() {
-  this._player.drawItemList(this._game.display());
 };
 
 game.MonsterList = function(level) {

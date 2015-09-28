@@ -264,7 +264,7 @@ rll.Player.prototype.leftPoint = function(direction) {
 };
 
 rll.Player.prototype.toHit = function() {
-  return this._level;
+  return this._level + 3;
 };
 
 rll.Player.prototype.getMoney = function(money) {
