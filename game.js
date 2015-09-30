@@ -115,15 +115,16 @@ game.AI.prototype.randomMove = function(actor) {
 game.Game = function() {
   this._display = new rll.Display();
   this._player  = new rll.Player(new rll.Character('@', '#fff', '#000'), 'player');
-  this._sight   = new rll.Sight(this._player, new rll.Size(80, 21));
   this._stage   = new rll.Stage(new rll.Size(80, 21), 0);
   this._messages = new rll.Messages();
-  this._player.getItem(game.potion.CureLightWounds);
-  this._player.getItem(game.potion.CureLightWounds);
 };
 
 game.Game.prototype.stage = function() {
   return this._stage;
+};
+
+game.Game.prototype.newStage = function(newStage) {
+  this._stage = newStage;
 };
 
 game.Game.prototype.player = function() {
@@ -134,15 +135,89 @@ game.Game.prototype.display = function() {
   return this._display;
 };
 
+game.Game.prototype.messages = function() {
+  return this._messages;
+};
+
+game.Game.prototype.message = function(message) {
+  this._messages.add(message);
+};
+
 game.Game.prototype.run = function() {
   this._display.initialize();
   document.body.appendChild(this._display.getCanvas());
+  (new game.Dungeon(this)).execute();
+};
+
+game.Scene = function() {
+  this._beforeScene = game.keyEvent.current();
+};
+
+game.Scene.prototype.execute = function() {
+  this.initialize();
   game.keyEvent.set(this);
-  this.newLevel();
+};
+
+game.Scene.prototype.initialize = function() {
   this.draw();
 };
 
-game.Game.prototype.newLevel = function() {
+game.Scene.prototype.draw = function() {};
+
+game.Scene.prototype.end = function() {
+  game.keyEvent.set(this._beforeScene);
+  this._beforeScene.draw();
+};
+
+game.Scene.prototype.handleEvent = function(e) {
+  if (e.keyCode === rll.key.ESCAPE) {
+    this.end();
+  }
+};
+
+game.Dungeon = function(thisGame) {
+  game.Scene.call(this);
+  this._game = thisGame;
+  this._sight = new rll.Sight(new rll.Size(80, 21));
+  this._player = thisGame.player();
+  this._stage = thisGame.stage();
+  this._display = thisGame.display();
+  this._messages = thisGame.messages();
+};
+inherit(game.Dungeon, game.Scene);
+
+game.Dungeon.prototype.initialize = function() {
+  this.newLevel();
+  this._player.getItem(game.potion.CureLightWounds);
+  this._player.getItem(game.potion.CureLightWounds);
+  this.draw();
+};
+
+game.Dungeon.prototype.draw = function() {
+  this._sight.scan(this._player.point(), this._stage);
+  this._sight.draw(this._display, this._stage);
+  this._player.drawStatusLine(this._display, new rll.Point(0, 21));
+  this._display.write(new rll.Point(71, 21), 'floor:'+this._stage.floor());
+  this._messages.draw(this._display);
+  if (this._messages.isEmpty() === false) {
+    (new game.More(this._messages, this._display)).execute();
+  }
+};
+
+game.Dungeon.prototype.message = function(message) {
+  this._messages.add(message);
+};
+
+// TODO
+game.LevelFactory = function(thisGame) {
+
+};
+
+game.LevelFactory.create = function(floor) {
+
+};
+
+game.Dungeon.prototype.newLevel = function() { // TODO class化
   this._sight.clear();
   var newFloor = this._stage.floor() + 1;
   var mapSize = new rll.Size(80, 21);
@@ -177,9 +252,10 @@ game.Game.prototype.newLevel = function() {
   generator.forEachRoom(function(room) {
     this.makeRoom(room);
   }, this);
+  this._game.newStage(this._stage);
 };
 
-game.Game.prototype.makeRoom = function(room) {
+game.Dungeon.prototype.makeRoom = function(room) { // TODO class化
   var dice = new rll.Dice('1d6');
   var roll = dice.roll();
   if (roll === 3) {
@@ -193,19 +269,19 @@ game.Game.prototype.makeRoom = function(room) {
   }
 };
 
-game.Game.prototype.putMonster = function(room) {
+game.Dungeon.prototype.putMonster = function(room) { // TODO class化
   var max = 1 + parseInt(this._stage.floor() / 3);
   var monsterNum = rll.random(1, max);
   var monsterList = new game.MonsterList(1+Math.floor(this._stage.floor() / 6));
   for (var i=0; i<monsterNum; i++) {
     var m = monsterList.getAtRandom();
     m.setPoint(room.insidePointAtRandom());
-    m.setAction(new game.AI(this));
+    m.setAction(new game.AI(this._game));
     this._stage.addActor(m);
   }
 };
 
-game.Game.prototype.putTreasure = function(room) {
+game.Dungeon.prototype.putTreasure = function(room) { // TODO class化
   if (rll.random(1, 6) === 1) {
     var potion = game.potion.CureLightWounds;
     this._stage.putItem(potion, room.insidePointAtRandom());
@@ -216,22 +292,7 @@ game.Game.prototype.putTreasure = function(room) {
   }
 };
 
-game.Game.prototype.draw = function() {
-  this._sight.scan(this._player.point(), this._stage);
-  this._sight.draw(this._display, this._stage);
-  this._player.drawStatusLine(this._display, new rll.Point(0, 21));
-  this._display.write(new rll.Point(71, 21), 'floor:'+this._stage.floor());
-  this._messages.draw(this._display);
-  if (this._messages.isEmpty() === false) {
-    (new game.More(this._messages, this._display)).execute();
-  }
-};
-
-game.Game.prototype.message = function(message) {
-  this._messages.add(message);
-};
-
-game.Game.prototype.handleEvent = function(e) {
+game.Dungeon.prototype.handleEvent = function(e) {
   if (this._player.isDead()) return;
   var key = e.keyCode,
       onShift = e.shiftKey;
@@ -244,11 +305,11 @@ game.Game.prototype.handleEvent = function(e) {
       this.runPlayer(game.DIRECITON_KEY[key]);
     } else if (this.movePlayer(game.DIRECITON_KEY[key])) {
       this._autoPickup();
-      this.actorsAction();
+      this._stage.actorsAction();
     }
   } else if (key === rll.key.I) {
     if (this._player.hasItem()) {
-      (new game.ChooseItem(this)).execute();
+      (new game.ChooseItem(this._game)).execute();
       return;
     }
     this.message('何も持っていない。');
@@ -261,7 +322,7 @@ game.Game.prototype.handleEvent = function(e) {
           this.message(actor.name() + 'がいる!');
         } else if (this._stage.openedDoorAt(to)) {
           this._stage.closeDoorAt(to);
-          this.actorsAction();
+          this._stage.actorsAction();
         } else {
           this.message('その方向に閉められるドアは無い。');
         }
@@ -277,13 +338,7 @@ game.Game.prototype.handleEvent = function(e) {
   this.draw();
 };
 
-game.Game.prototype.actorsAction = function() {
-  this._stage.forEachActor(function(actor){
-    actor.action();
-  });
-};
-
-game.Game.prototype.movePlayer = function(direction) {
+game.Dungeon.prototype.movePlayer = function(direction) {
   if (direction.equal(rll.Direction.HERE)) return true;
   var to = this._player.movedPoint(direction),
       monster = this._stage.findActor(to);
@@ -302,7 +357,7 @@ game.Game.prototype.movePlayer = function(direction) {
   return true;
 };
 
-game.Game.prototype._autoPickup = function() {
+game.Dungeon.prototype._autoPickup = function() {
   var item = this._stage.pickupItem(this._player.point());
   if (item === undefined) return false;
   if (item.isMoney()) {
@@ -319,7 +374,7 @@ game.Game.prototype._autoPickup = function() {
   return true;
 };
 
-game.Game.prototype._pickupMoney = function(money) {
+game.Dungeon.prototype._pickupMoney = function(money) {
   this._player.getMoney(money);
   this.message('銀貨を'+money.value()+'枚手に入れた。');
   if ( this._player.expIsFull()) {
@@ -391,14 +446,14 @@ game.Runner.prototype._turn = function() {
   return false;
 };
 
-game.Game.prototype.runPlayer = function(direction) {
+game.Dungeon.prototype.runPlayer = function(direction) {
   if (direction.equal(rll.Direction.HERE)) return true;
   var runner = new game.Runner(this._player, direction, this._stage);
   while (true) {
     if (runner.inFrontDoor()) break;
     if (this._sight.inMonster(this._stage, this._player)) break;
     if (this.movePlayer(direction) === false) break;
-    this.actorsAction();
+    this._stage.actorsAction();
     this._sight.scan(this._player.point(), this._stage);
     if (this._autoPickup()) break;
     if (this._stage.downableAt(this._player.point())) break;
@@ -407,7 +462,7 @@ game.Game.prototype.runPlayer = function(direction) {
   }
 };
 
-game.Game.prototype.attackToMonster = function(monster) {
+game.Dungeon.prototype.attackToMonster = function(monster) {
   var attack = new game.MeleeAttack(this._player, monster);
   if (attack.isHit() === false) {
     this.message(monster.name() + 'にかわされた!');
@@ -437,32 +492,6 @@ game.MeleeAttack.prototype.damage = function() {
   var damagePoint = this._attaker.attackDamage();
   this._defender.damage(damagePoint);
   return damagePoint;
-};
-
-game.Scene = function() {
-  this._beforeScene = game.keyEvent.current();
-};
-
-game.Scene.prototype.execute = function() {
-  this.initialize();
-  game.keyEvent.set(this);
-};
-
-game.Scene.prototype.initialize = function() {
-  this.draw();
-};
-
-game.Scene.prototype.draw = function() {};
-
-game.Scene.prototype.end = function() {
-  game.keyEvent.set(this._beforeScene);
-  this._beforeScene.draw();
-};
-
-game.Scene.prototype.handleEvent = function(e) {
-  if (e.keyCode === rll.key.ESCAPE) {
-    this.end();
-  }
 };
 
 game.chooseDirection = function(action) {
@@ -502,6 +531,7 @@ game.ChooseItem = function(thisGame) {
   game.Scene.call(this);
   this._game = thisGame;
   this._player = thisGame.player();
+  this._stage = thisGame.stage();
 };
 inherit(game.ChooseItem, game.Scene);
 
@@ -516,7 +546,7 @@ game.ChooseItem.prototype.handleEvent = function(e) {
     return;
   } else if (key == rll.key.RETURN) {
     this._player.useItem(this._game);
-    this._game.actorsAction();
+    this._stage.actorsAction();
     this.end();
     return;
   } else if (key in game.DIRECITON_KEY === false) {

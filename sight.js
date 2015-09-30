@@ -1,6 +1,5 @@
 /*global rll*/
-rll.Sight = function(player, size) {
-  this._player = player;
+rll.Sight = function(size) {
   this._memory = [];
   this._sight = null;
   for (var y=0, h=size.height(); y<h; y++) {

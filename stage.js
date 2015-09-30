@@ -157,3 +157,11 @@ rll.Stage.prototype.openedDoorAt = function(point) {
 rll.Stage.prototype.openDoorAt = function(point) {
   this._terrain.openDoorAt(point);
 };
+
+rll.Stage.prototype.actorsAction = function() {
+  this.forEachActor(function(actor){
+    actor.action();
+  });
+};
+
+
