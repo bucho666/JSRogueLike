@@ -29,6 +29,122 @@ game.DIRECITON_KEY[rll.key.RIGHT] = rll.Direction.E;
 game.DIRECITON_KEY[rll.key.UP] = rll.Direction.N;
 game.DIRECITON_KEY[rll.key.DOWN] = rll.Direction.S;
 
+game.Game = function() {
+  this._display = new rll.Display();
+  this._player  = new rll.Player(new rll.Character('@', '#fff', '#000'), 'player');
+  this._stage   = new rll.Stage(new rll.Size(80, 21), 0);
+  this._messages = new rll.Messages();
+};
+
+game.Game.prototype.stage = function() {
+  return this._stage;
+};
+
+game.Game.prototype.player = function() {
+  return this._player;
+};
+
+game.Game.prototype.display = function() {
+  return this._display;
+};
+
+game.Game.prototype.messages = function() {
+  return this._messages;
+};
+
+game.Game.prototype.message = function(message) {
+  this._messages.add(message);
+};
+
+game.Game.prototype.run = function() {
+  this._display.initialize();
+  document.body.appendChild(this._display.getCanvas());
+  (new game.Dungeon(this)).execute();
+};
+
+game.Game.prototype.newLevel = function() {
+  this._stage = (new game.LevelFactory(this)).create(this._stage.floor() + 1);
+};
+
+game.LevelFactory = function(thisGame) {
+  this._game = thisGame;
+  this._stage = null;
+  this._player = thisGame.player();
+};
+
+game.LevelFactory.prototype.create = function(floor) {
+  var mapSize = new rll.Size(80, 21),
+      generator = new rll.Generator(mapSize),
+      doorTerrain;
+  this._stage = new rll.Stage(mapSize, floor);
+  generator.generate();
+  generator.forEachInsideRoom(function(point) {
+    this.setTerrain(rll.Terrain.FLOOR, point);
+  }, this._stage);
+  generator.forEachDoor(function(point) {
+    switch(rll.random(1, 6)) {
+      case 1:
+        doorTerrain = rll.Terrain.FLOOR;
+        break;
+      case 2:
+        doorTerrain = rll.Terrain.OPENED_DOOR;
+        break;
+      default:
+        doorTerrain = rll.Terrain.CLOSED_DOOR;
+        break;
+    }
+    this.setTerrain(doorTerrain, point);
+  }, this._stage);
+  generator.forEachCorridor(function(point) {
+    this.setTerrain(rll.Terrain.FLOOR, point);
+  }, this._stage);
+  this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
+      generator.roomInsidePointAtRandom());
+  this._player.setPoint(generator.roomInsidePointAtRandom());
+  this._stage.addActor(this._player);
+  generator.forEachRoom(function(room) {
+    this.makeRoom(room);
+  }, this);
+  return this._stage;
+};
+
+game.LevelFactory.prototype.makeRoom = function(room) {
+  var dice = new rll.Dice('1d6');
+  var roll = dice.roll();
+  if (roll === 3) {
+    dice = new rll.Dice('1d3');
+  } else if (roll >= 4) {
+    this.putMonster(room);
+    dice = new rll.Dice('1d2');
+  }
+  if (dice.roll() === 1) {
+    this.putTreasure(room);
+  }
+};
+
+game.LevelFactory.prototype.putMonster = function(room) { // TODO class化
+  var max = 1 + parseInt(this._stage.floor() / 3);
+  var monsterNum = rll.random(1, max);
+  var monsterList = new game.MonsterList(1+Math.floor(this._stage.floor() / 6));
+  for (var i=0; i<monsterNum; i++) {
+    var m = monsterList.getAtRandom();
+    m.setPoint(room.insidePointAtRandom());
+    m.setAction(new game.AI(this._game));
+    this._stage.addActor(m);
+  }
+};
+
+game.LevelFactory.prototype.putTreasure = function(room) { // TODO class化
+  if (rll.random(1, 6) === 1) {
+    var potion = game.potion.CureLightWounds;
+    this._stage.putItem(potion, room.insidePointAtRandom());
+  } else {
+    var diceNum = (Math.floor(this._stage.floor() / 5) + 1) * 6;
+    this._stage.putItem(new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100)),
+    room.insidePointAtRandom());
+  }
+};
+
 game.AI = function(game) {
   this._game = game;
   this._lastDest = null;
@@ -112,43 +228,6 @@ game.AI.prototype.randomMove = function(actor) {
   }
 };
 
-game.Game = function() {
-  this._display = new rll.Display();
-  this._player  = new rll.Player(new rll.Character('@', '#fff', '#000'), 'player');
-  this._stage   = new rll.Stage(new rll.Size(80, 21), 0);
-  this._messages = new rll.Messages();
-};
-
-game.Game.prototype.stage = function() {
-  return this._stage;
-};
-
-game.Game.prototype.newStage = function(newStage) {
-  this._stage = newStage;
-};
-
-game.Game.prototype.player = function() {
-  return this._player;
-};
-
-game.Game.prototype.display = function() {
-  return this._display;
-};
-
-game.Game.prototype.messages = function() {
-  return this._messages;
-};
-
-game.Game.prototype.message = function(message) {
-  this._messages.add(message);
-};
-
-game.Game.prototype.run = function() {
-  this._display.initialize();
-  document.body.appendChild(this._display.getCanvas());
-  (new game.Dungeon(this)).execute();
-};
-
 game.Scene = function() {
   this._beforeScene = game.keyEvent.current();
 };
@@ -193,6 +272,12 @@ game.Dungeon.prototype.initialize = function() {
   this.draw();
 };
 
+game.Dungeon.prototype.newLevel = function() {
+  this._sight.clear();
+  this._game.newLevel();
+  this._stage = this._game.stage();
+};
+
 game.Dungeon.prototype.draw = function() {
   this._sight.scan(this._player.point(), this._stage);
   this._sight.draw(this._display, this._stage);
@@ -206,90 +291,6 @@ game.Dungeon.prototype.draw = function() {
 
 game.Dungeon.prototype.message = function(message) {
   this._messages.add(message);
-};
-
-// TODO
-game.LevelFactory = function(thisGame) {
-
-};
-
-game.LevelFactory.create = function(floor) {
-
-};
-
-game.Dungeon.prototype.newLevel = function() { // TODO class化
-  this._sight.clear();
-  var newFloor = this._stage.floor() + 1;
-  var mapSize = new rll.Size(80, 21);
-  this._stage = new rll.Stage(mapSize, newFloor);
-  var generator = new rll.Generator(mapSize);
-  generator.generate();
-  generator.forEachInsideRoom(function(point) {
-    this.setTerrain(rll.Terrain.FLOOR, point);
-  }, this._stage);
-  generator.forEachDoor(function(point) {
-    var doorTerrain;
-    switch(rll.random(1, 6)) {
-      case 1:
-        doorTerrain = rll.Terrain.FLOOR;
-        break;
-      case 2:
-        doorTerrain = rll.Terrain.OPENED_DOOR;
-        break;
-      default:
-        doorTerrain = rll.Terrain.CLOSED_DOOR;
-        break;
-    }
-    this.setTerrain(doorTerrain, point);
-  }, this._stage);
-  generator.forEachCorridor(function(point) {
-    this.setTerrain(rll.Terrain.FLOOR, point);
-  }, this._stage);
-  this._stage.setTerrain(rll.Terrain.DOWN_STAIRS,
-      generator.roomInsidePointAtRandom());
-  this._player.setPoint(generator.roomInsidePointAtRandom());
-  this._stage.addActor(this._player);
-  generator.forEachRoom(function(room) {
-    this.makeRoom(room);
-  }, this);
-  this._game.newStage(this._stage);
-};
-
-game.Dungeon.prototype.makeRoom = function(room) { // TODO class化
-  var dice = new rll.Dice('1d6');
-  var roll = dice.roll();
-  if (roll === 3) {
-    dice = new rll.Dice('1d3');
-  } else if (roll >= 4) {
-    this.putMonster(room);
-    dice = new rll.Dice('1d2');
-  }
-  if (dice.roll() === 1) {
-    this.putTreasure(room);
-  }
-};
-
-game.Dungeon.prototype.putMonster = function(room) { // TODO class化
-  var max = 1 + parseInt(this._stage.floor() / 3);
-  var monsterNum = rll.random(1, max);
-  var monsterList = new game.MonsterList(1+Math.floor(this._stage.floor() / 6));
-  for (var i=0; i<monsterNum; i++) {
-    var m = monsterList.getAtRandom();
-    m.setPoint(room.insidePointAtRandom());
-    m.setAction(new game.AI(this._game));
-    this._stage.addActor(m);
-  }
-};
-
-game.Dungeon.prototype.putTreasure = function(room) { // TODO class化
-  if (rll.random(1, 6) === 1) {
-    var potion = game.potion.CureLightWounds;
-    this._stage.putItem(potion, room.insidePointAtRandom());
-  } else {
-    var diceNum = (Math.floor(this._stage.floor() / 5) + 1) * 6;
-    this._stage.putItem(new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100)),
-    room.insidePointAtRandom());
-  }
 };
 
 game.Dungeon.prototype.handleEvent = function(e) {
