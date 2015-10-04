@@ -170,7 +170,7 @@ rll.Humanoid.prototype.openableDoor = function() {
   return true;
 };
 
-rll.ChooseList = function(limit) {
+rll.ChooseList = function(limit) { // TODO 別ファイル化
   this._limit = limit;
   this._items = [];
   this._cursor = 0;
@@ -267,7 +267,7 @@ rll.ItemList.prototype.useSelectedItem = function(game) {
 };
 
 rll.ItemList.prototype.removeCurrentItem = function() {
-  var item = rll.ChooseList.prototype.removeCurrentItem.call(this);
+  var item = this._super.prototype.removeCurrentItem.call(this);
   if (item === this._weapon) {
     this._weapon = null;
   }

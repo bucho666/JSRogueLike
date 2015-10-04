@@ -4,6 +4,7 @@ Object.defineProperty(Object.prototype, 'inherit', { value: function(parent) {
   F.prototype = parent.prototype;
   this.prototype = new F();
   this.prototype.constructer = this;
+  this.prototype._super = parent;
 }});
 
 Object.defineProperty(Array.prototype, 'choiceAtRandom', { value: function() {
