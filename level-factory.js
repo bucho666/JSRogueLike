@@ -76,6 +76,7 @@ game.LevelFactory.prototype.putTreasure = function(room) {
       treasure = game.potion.CureLightWounds;
       break;
     case 2:
+    case 3:
       treasure = game.weapon.list.choiceAtRandom();
       break;
     default:
