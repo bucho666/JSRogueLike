@@ -101,6 +101,7 @@ rll.Grid.prototype.draw = function(context) {
   if (isWide) {
     context.font = this._wideFont.toString();
     y += 1;
+    x += 4;
   }
   context.fillText(this._character.glyph(), x, y);
   context.font = orgFont;
