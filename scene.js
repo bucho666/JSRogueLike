@@ -363,18 +363,27 @@ game.Drop.prototype.name = function() {
 };
 
 game.Drop.prototype.execute = function() {
-  var item = this._player.removeSelectedItem();
-  var point = this._dropPoint();
+  var point = this._dropPoint(),
+      item;
+  if (point === null) {
+    this._game.message('捨てる場所が無い。');
+    return;
+  }
+  item = this._player.removeSelectedItem();
   this._stage.putItem(item, point);
   this._game.message(item.name() + 'を捨てた。');
   this._game.nextTurn();
 };
 
 game.Drop.prototype._dropPoint = function() {
-  return this._player.point();
-  // TODO ActorにaroundPointメソッドを追加
-  // playerPointをリストに追加
-  // アイテムが無い場所でフィルタ
-  // フィルタの結果、空ならplayerPointを返す
-  // フィルタがあるなら先頭の要素を返す
+  var here = this._player.point();
+  if (this._stage.item(here) === undefined) return here;
+  var points = this._player.aroundPoints();
+  points = points.filter(function(p) {
+    if (this.walkableAt(p) === false) return false;
+    if (this.item(p)) return false;
+    return true;
+  }, this._stage);
+  if (points.isEmpty()) return null;
+  return points[0];
 };

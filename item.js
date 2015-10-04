@@ -26,5 +26,5 @@ game.weapon.list = [
   new game.Weapon('ハンマー', '2d3-1'),
   new game.Weapon('ロングソード', '2d4'),
   new game.Weapon('バトルアックス', '1d9'),
-  new game.Weapon('グレートソード', '2d5')
+  new game.Weapon('トゥハンドソード', '2d5')
 ];

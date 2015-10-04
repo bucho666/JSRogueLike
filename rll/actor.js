@@ -83,6 +83,12 @@ rll.Actor.prototype.point = function() {
   return this._point;
 };
 
+rll.Actor.prototype.aroundPoints = function() {
+  return rll.Direction.AROUND.map(function(direction) {
+    return this.add(direction);
+  }, this._point);
+};
+
 rll.Actor.prototype.directionsTo = function(point) {
   return this._point.directionsTo(point);
 };
