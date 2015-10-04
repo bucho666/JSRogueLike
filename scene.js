@@ -16,14 +16,27 @@ game.Scene.prototype.initialize = function() {
 
 game.Scene.prototype.draw = function() {};
 
-game.Scene.prototype.end = function() {
+game.Scene.prototype.drawBeforeScene = function() {
+  this._beforeScene.draw(this._game.display());
+};
+
+game.Scene.prototype.back = function() {
   game.keyEvent.set(this._beforeScene);
   this._beforeScene.draw();
 };
 
+game.Scene.prototype.backToRoot = function() {
+  var rootScene = this;
+  while (rootScene._beforeScene) {
+    rootScene = rootScene._beforeScene;
+  }
+  game.keyEvent.set(rootScene);
+  rootScene.draw();
+};
+
 game.Scene.prototype.handleEvent = function(e) {
   if (e.keyCode === rll.key.ESCAPE) {
-    this.end();
+    this.back();
   }
 };
 
@@ -82,7 +95,7 @@ game.Dungeon.prototype.handleEvent = function(e) {
       this.runPlayer(game.DIRECITON_KEY[key]);
     } else if (this.movePlayer(game.DIRECITON_KEY[key])) {
       this._autoPickup();
-      this._stage.actorsAction();
+      this._game.nextTurn();
     }
   } else if (key === rll.key.I) {
     if (this._player.hasItem()) {
@@ -99,7 +112,7 @@ game.Dungeon.prototype.handleEvent = function(e) {
           this.message(actor.name() + 'がいる!');
         } else if (this._stage.openedDoorAt(to)) {
           this._stage.closeDoorAt(to);
-          this._stage.actorsAction();
+          this._game.nextTurn();
         } else {
           this.message('その方向に閉められるドアは無い。');
         }
@@ -145,7 +158,6 @@ game.Dungeon.prototype._autoPickup = function() {
     this._stage.putItem(item, this._player.point());
     return true;
   }
-  // TODO アイテムを捨てる機能を実装
   this.message(item.name()+'を手に入れた。');
   this._player.getItem(item);
   return true;
@@ -168,7 +180,7 @@ game.Dungeon.prototype.runPlayer = function(direction) {
     if (runner.inFrontDoor()) break;
     if (this._sight.inMonster(this._stage, this._player)) break;
     if (this.movePlayer(direction) === false) break;
-    this._stage.actorsAction();
+    this._game.nextTurn();
     this._sight.scan(this._player.point(), this._stage);
     if (this._autoPickup()) break;
     if (this._stage.downableAt(this._player.point())) break;
@@ -202,7 +214,7 @@ game.chooseDirection.prototype.handleEvent = function(e) {
   direction = game.DIRECITON_KEY[key];
   if (direction === undefined) return;
   this._action(direction);
-  this.end();
+  this.back();
 };
 
 game.More = function(messages, display) {
@@ -216,11 +228,11 @@ game.More.prototype.handleEvent = function(e) {
   if (e.keyCode != rll.key.SPACE) return;
   this._messages.draw(this._display);
   if (this._messages.isEmpty()) {
-    this.end();
+    this.back();
   }
 };
 
-game.More.prototype.end = function() {
+game.More.prototype.back = function() {
   game.keyEvent.set(this._beforeScene);
 };
 
@@ -233,18 +245,18 @@ game.ChooseItem = function(thisGame) {
 game.ChooseItem.inherit(game.Scene);
 
 game.ChooseItem.prototype.draw = function() {
+  this._beforeScene.draw();
   this._player.drawItemList(this._game.display());
 };
 
 game.ChooseItem.prototype.handleEvent = function(e) {
   var key = e.keyCode;
   if (key == rll.key.ESCAPE) {
-    this.end();
+    this.back();
     return;
   } else if (key == rll.key.RETURN) {
-    this._player.useItem(this._game);
-    this._stage.actorsAction();
-    this.end();
+    this.drawBeforeScene();
+    (new game.ChooseItemAction(this._game)).execute();
     return;
   } else if (key in game.DIRECITON_KEY === false) {
     return;
@@ -256,4 +268,97 @@ game.ChooseItem.prototype.handleEvent = function(e) {
     return;
   }
   this.draw();
+};
+
+game.ChooseItemAction = function(thisGame) {
+  game.Scene.call(this);
+  this._game = thisGame;
+  this._player = thisGame.player();
+  this._actionList = new game.ItemActionList();
+};
+game.ChooseItemAction.inherit(game.Scene);
+
+game.ChooseItemAction.prototype.initialize = function() {
+  var item = this._player.selectedItem();
+  if (item.isPotion()) {
+    this._actionList.add(new game.Quaff(this._game));
+  }
+  if (item.isWeapon()) {
+    this._actionList.add(new game.Equip(this._game));
+  }
+  this._actionList.add(new game.Drop(this._game));
+  this.draw();
+};
+
+game.ChooseItemAction.prototype.draw = function() {
+  this._actionList.draw(this._game.display());
+};
+
+game.ChooseItemAction.prototype.handleEvent = function(e) {
+  var key = e.keyCode;
+  if (key == rll.key.ESCAPE) {
+    this.back();
+    return;
+  } else if (key == rll.key.RETURN) {
+    this._actionList.execute();
+    this.backToRoot();
+    return;
+  } else if (key in game.DIRECITON_KEY === false) {
+    return;
+  } else if (game.DIRECITON_KEY[key] === rll.Direction.S) {
+    this._actionList.nextCursor();
+  } else if (game.DIRECITON_KEY[key] === rll.Direction.N) {
+    this._actionList.prevCursor();
+  } else {
+    return;
+  }
+  this.draw();
+};
+
+game.ItemActionList = function() {
+  rll.ChooseList.call(this, 8);
+};
+game.ItemActionList.inherit(rll.ChooseList);
+
+game.ItemActionList.prototype.execute = function() {
+  this._items[this._cursor].execute();
+};
+
+game.Quaff = function(thisGame) {
+  this._game = thisGame;
+  this._player = thisGame.player();
+};
+
+game.Quaff.prototype.name = function() {
+  return '飲む';
+};
+
+game.Quaff.prototype.execute = function() {
+  this._player.useItem(this._game);
+  this._game.nextTurn();
+};
+
+game.Equip = function(thisGame) {
+  this._game = thisGame;
+  this._player = thisGame.player();
+};
+
+game.Equip.prototype.name = function() {
+  return '装備';
+};
+
+game.Equip.prototype.execute = function() {
+  this._player.useItem(this._game);
+  this._game.nextTurn();
+};
+
+game.Drop = function(thisGame) {
+  this._game = thisGame;
+};
+
+game.Drop.prototype.execute = function() {
+};
+
+game.Drop.prototype.name= function() {
+  return '捨てる';
 };

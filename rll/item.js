@@ -12,6 +12,10 @@ rll.Item.prototype.isMoney = function() {
   return false;
 };
 
+rll.Item.prototype.isPotion = function() {
+  return false;
+};
+
 rll.Item.prototype.isWeapon = function() {
   return false;
 };
@@ -36,6 +40,10 @@ rll.Potion = function(name, magic, color) {
   this._magic = magic;
 };
 rll.Potion.inherit(rll.Item);
+
+rll.Potion.prototype.isPotion = function() {
+  return true;
+};
 
 rll.Potion.prototype.use = function(game) {
   (new this._magic(game)).apply();

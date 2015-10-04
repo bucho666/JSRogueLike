@@ -170,12 +170,63 @@ rll.Humanoid.prototype.openableDoor = function() {
   return true;
 };
 
-rll.ItemList = function(limit) {
-  this._items = [];
-  this._weapon = null;
+rll.ChooseList = function(limit) {
   this._limit = limit;
+  this._items = [];
   this._cursor = 0;
 };
+
+rll.ChooseList.prototype.draw = function(display) {
+  var backgroundColor;
+  for (var y=0; y<this._items.length; y++) {
+    backgroundColor = this._cursor === y ? '#080' : '#000';
+    display.write(new rll.Point(0, y), this.name(y), '#fff', backgroundColor);
+  }
+};
+
+rll.ChooseList.prototype.add = function(newItem) {
+  this._items.push(newItem);
+};
+
+rll.ChooseList.prototype.isEmpty = function() {
+  return this._items.isEmpty();
+};
+
+rll.ChooseList.prototype.isFull = function() {
+  return this._items.length >= this._limit;
+};
+
+rll.ChooseList.prototype.nextCursor = function() {
+  this._cursor += 1;
+  this._adjustCursor();
+};
+
+rll.ChooseList.prototype.prevCursor = function() {
+  this._cursor -= 1;
+  this._adjustCursor();
+};
+
+rll.ChooseList.prototype._adjustCursor = function() {
+  if (this._items.isEmpty()) {
+    this._cursor = 0;
+  } else {
+    this._cursor = (this._cursor + this._items.length) % this._items.length;
+  }
+};
+
+rll.ChooseList.prototype.name = function(index) {
+  return this._items[index].name();
+};
+
+rll.ChooseList.prototype.currentItem = function() {
+  return this._items[this._cursor];
+};
+
+rll.ItemList = function(limit) {
+  rll.ChooseList.call(this, limit);
+  this._weapon = null;
+};
+rll.ItemList.inherit(rll.ChooseList);
 
 rll.ItemList.prototype.equip = function(item) {
   if (item.isWeapon()) {
@@ -194,38 +245,11 @@ rll.ItemList.prototype.has = function(item) {
   return this._items.has(item);
 };
 
-rll.ItemList.prototype.add = function(newItem) {
-  this._items.push(newItem);
-};
-
-rll.ItemList.prototype.draw = function(display) {
-  var backgroundColor;
-  var item;
-  for (var y=0; y<this._items.length; y++) {
-    backgroundColor = this._cursor === y ? '#080' : '#000';
-    item = this._items[y];
-    var name = item.name();
-    if (item === this._weapon) name += '[装備]';
-    display.write(new rll.Point(0, y), name, '#fff', backgroundColor);
-  }
-};
-
-rll.ItemList.prototype.isEmpty = function() {
-  return this._items.isEmpty();
-};
-
-rll.ItemList.prototype.isFull = function() {
-  return this._items.length >= this._limit;
-};
-
-rll.ItemList.prototype.nextCursor = function() {
-  this._cursor += 1;
-  this._adjustCursor();
-};
-
-rll.ItemList.prototype.prevCursor = function() {
-  this._cursor -= 1;
-  this._adjustCursor();
+rll.ItemList.prototype.name = function(index) {
+  var item = this._items[index],
+      name = item.name();
+  if (item === this._weapon) name += '[装備]';
+  return name;
 };
 
 rll.ItemList.prototype.useSelectedItem = function(game) {
@@ -234,14 +258,6 @@ rll.ItemList.prototype.useSelectedItem = function(game) {
   if (item.isWeapon()) return;
   this._items.splice(this._cursor, 1);
   this._adjustCursor();
-};
-
-rll.ItemList.prototype._adjustCursor = function() {
-  if (this._items.isEmpty()) {
-    this._cursor = 0;
-  } else {
-    this._cursor = (this._cursor + this._items.length) % this._items.length;
-  }
 };
 
 rll.Player = function(character, name) {
@@ -279,11 +295,15 @@ rll.Player.prototype.equip = function(item) {
 };
 
 rll.Player.prototype.selectNextItem = function() {
-  return this._items.nextCursor();
+  this._items.nextCursor();
 };
 
 rll.Player.prototype.selectPrevItem = function() {
-  return this._items.prevCursor();
+  this._items.prevCursor();
+};
+
+rll.Player.prototype.selectedItem = function() {
+  return this._items.currentItem();
 };
 
 rll.Player.prototype.level = function() {

@@ -66,6 +66,10 @@ game.Game.prototype.newLevel = function() {
   this._stage = (new game.LevelFactory(this)).create(this._stage.floor() + 1);
 };
 
+game.Game.prototype.nextTurn = function() {
+  this._stage.actorsAction();
+};
+
 (function() {
   var newGame = new game.Game();
   newGame.run();
