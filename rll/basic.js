@@ -1,4 +1,3 @@
-/*jshint unused: false*/
 Object.defineProperty(Object.prototype, 'inherit', { value: function(parent) {
   var F = function(){};
   F.prototype = parent.prototype;
