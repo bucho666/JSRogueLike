@@ -1,8 +1,8 @@
-/* global rll, inherit*/
+/* global rll*/
 rll.Item = function(character, name) {
   rll.Entity.call(this, character, name);
 };
-inherit(rll.Item, rll.Entity);
+rll.Item.inherit(rll.Entity);
 
 rll.Item.prototype.use = function(game) {
   game.message(this.name() + 'を使った。');
@@ -21,7 +21,7 @@ rll.Money = function(value) {
   this._value = value;
 };
 rll.Money.character = new rll.Character('$', '#ff0');
-inherit(rll.Money, rll.Item);
+rll.Money.inherit(rll.Item);
 
 rll.Money.prototype.value = function() {
   return this._value;
@@ -35,7 +35,7 @@ rll.Potion = function(name, magic, color) {
   rll.Item.call(this, new rll.Character('!', color), name);
   this._magic = magic;
 };
-inherit(rll.Potion, rll.Item);
+rll.Potion.inherit(rll.Item);
 
 rll.Potion.prototype.use = function(game) {
   (new this._magic(game)).apply();
@@ -46,7 +46,6 @@ rll.Weapon = function(name, damage) {
   this._damageDice = new rll.Dice(damage);
 };
 rll.Weapon.inherit(rll.Item);
-// TODO 全部書き換え
 
 rll.Weapon.character = new rll.Character('/', '#fff');
 

@@ -1,11 +1,4 @@
 /*jshint unused: false*/
-var inherit = function(child, parent) {
-  var F = function(){};
-  F.prototype = parent.prototype;
-  child.prototype = new F();
-  child.prototype.constructer = child;
-};
-
 Object.defineProperty(Object.prototype, 'inherit', { value: function(parent) {
   var F = function(){};
   F.prototype = parent.prototype;

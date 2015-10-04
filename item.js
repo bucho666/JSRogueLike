@@ -17,7 +17,7 @@ game.Weapon.prototype.use = function(game) {
 game.weapon = {};
 game.weapon.dagger = new game.Weapon('ダガー', '2d2');
 game.weapon.list = [
-  new game.Weapon('ダガー', '2d2'),
+  game.weapon.dagger,
   new game.Weapon('クラブ', '1d5'),
   new game.Weapon('ショートソード', '2d3'),
   new game.Weapon('メイス', '2d2+1'),

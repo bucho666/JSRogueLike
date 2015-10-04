@@ -1,10 +1,10 @@
-/*global rll, inherit*/
+/*global rll*/
 rll.Terrain = function(property) {
   var ch = new rll.Character(property.character, property.color);
   rll.Entity.call(this, ch, property.name);
   this._walkable = property.walkable;
 };
-inherit(rll.Terrain, rll.Entity);
+rll.Terrain.inherit(rll.Entity);
 
 rll.Terrain.FLOOR = new rll.Terrain({
   character: '.',

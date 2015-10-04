@@ -1,4 +1,4 @@
-/* global rll, inherit*/
+/* global rll*/
 rll.State = function(max, value) {
   value = value === undefined ? max : value;
   this._current = value;
@@ -39,7 +39,7 @@ rll.State.prototype.toString = function() {
 rll.PercenteageState = function(max, value) {
   rll.State.call(this, max, value);
 };
-inherit(rll.PercenteageState, rll.State);
+rll.PercenteageState.inherit(rll.State);
 
 rll.PercenteageState.prototype.toString = function() {
   var p = Math.floor((this._current / this._max * 100));
@@ -53,7 +53,7 @@ rll.Actor = function(character, name) {
   this._hp = new rll.State(8);
   this._armorClass = 8;
 };
-inherit(rll.Actor, rll.Entity);
+rll.Actor.inherit(rll.Entity);
 
 rll.Actor.prototype.damage = function(damage) {
   this._hp.add(-damage);
@@ -136,7 +136,7 @@ rll.Monster = function(config) {
   this._armorClass = config.armorClass;
   this._damage = new rll.Dice(config.damage);
 };
-inherit(rll.Monster, rll.Actor);
+rll.Monster.inherit(rll.Actor);
 
 rll.Monster.prototype.attackDamage = function() {
   return this._damage.roll();
@@ -164,7 +164,7 @@ rll.Monster.prototype.openableDoor = function() {
 rll.Humanoid = function(config) {
   rll.Monster.call(this, config);
 };
-inherit(rll.Humanoid, rll.Monster);
+rll.Humanoid.inherit(rll.Monster);
 
 rll.Humanoid.prototype.openableDoor = function() {
   return true;
@@ -252,7 +252,7 @@ rll.Player = function(character, name) {
   this._items = new rll.ItemList(8);
   this.setAction(new rll.Player.AutoHeal(this));
 };
-inherit(rll.Player, rll.Actor);
+rll.Player.inherit(rll.Actor);
 
 rll.Player.prototype.getItem = function(item) {
   this._items.add(item);

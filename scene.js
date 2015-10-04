@@ -1,4 +1,4 @@
-/*global rll, inherit*/
+/*global rll*/
 var game = game || {};
 
 game.Scene = function() {
@@ -36,7 +36,7 @@ game.Dungeon = function(thisGame) {
   this._display = thisGame.display();
   this._messages = thisGame.messages();
 };
-inherit(game.Dungeon, game.Scene);
+game.Dungeon.inherit(game.Scene);
 
 game.Dungeon.prototype.initialize = function() {
   this.newLevel();
@@ -195,7 +195,7 @@ game.chooseDirection = function(action) {
   game.Scene.call(this);
   this._action = action;
 };
-inherit(game.chooseDirection, game.Scene);
+game.chooseDirection.inherit(game.Scene);
 
 game.chooseDirection.prototype.handleEvent = function(e) {
   var key = e.keyCode, direction;
@@ -210,7 +210,7 @@ game.More = function(messages, display) {
   this._messages = messages;
   this._display = display;
 };
-inherit(game.More, game.Scene);
+game.More.inherit(game.Scene);
 
 game.More.prototype.handleEvent = function(e) {
   if (e.keyCode != rll.key.SPACE) return;
@@ -230,7 +230,7 @@ game.ChooseItem = function(thisGame) {
   this._player = thisGame.player();
   this._stage = thisGame.stage();
 };
-inherit(game.ChooseItem, game.Scene);
+game.ChooseItem.inherit(game.Scene);
 
 game.ChooseItem.prototype.draw = function() {
   this._player.drawItemList(this._game.display());

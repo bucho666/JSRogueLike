@@ -1,8 +1,8 @@
-/* global rll, inherit*/
+/* global rll*/
 rll.Room = function(size, point) {
   rll.Rect.call(this, size, point);
 };
-inherit(rll.Room, rll.Rect);
+rll.Room.inherit(rll.Rect);
 
 rll.Room.prototype.randomSideOf = function(side) {
   var x, y;
