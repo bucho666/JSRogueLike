@@ -36,6 +36,16 @@ rll.State.prototype.toString = function() {
   return this._current + '(' + this._max + ')';
 };
 
+rll.PercenteageState = function(max, value) {
+  rll.State.call(this, max, value);
+};
+inherit(rll.PercenteageState, rll.State);
+
+rll.PercenteageState.prototype.toString = function() {
+  var p = Math.floor((this._current / this._max * 100));
+  return p + '%';
+};
+
 rll.Actor = function(character, name) {
   rll.Entity.call(this, character, name);
   this._point = new rll.Point(0, 0);
@@ -214,7 +224,7 @@ rll.ItemList.prototype._adjustCursor = function() {
 rll.Player = function(character, name) {
   rll.Actor.call(this, character, name);
   this._level = 1;
-  this._exp = new rll.State(2000, 0);
+  this._exp = new rll.PercenteageState(2000, 0);
   this._armorClass = 6;
   this._items = new rll.ItemList(8);
   this.setAction(new rll.Player.AutoHeal(this));
@@ -283,7 +293,7 @@ rll.Player.prototype.levelUp = function() {
   this._level += 1;
   this._hp.addMax((new rll.Dice('1d8')).roll());
   var exp = this._exp.current() - this._exp.max();
-  this._exp = new rll.State(this._exp.max() * 2, exp);
+  this._exp = new rll.PercenteageState(this._exp.max() * 2, exp);
 };
 
 rll.Player.prototype.drawStatusLine = function(display, point) {
