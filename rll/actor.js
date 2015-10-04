@@ -171,9 +171,27 @@ rll.Humanoid.prototype.openableDoor = function() {
 };
 
 rll.ItemList = function(limit) {
-  this._limit = limit;
   this._items = [];
+  this._weapon = null;
+  this._limit = limit;
   this._cursor = 0;
+};
+
+rll.ItemList.prototype.equip = function(item) {
+  if (item.isWeapon()) {
+    this._weapon = item;
+  }
+};
+
+rll.ItemList.prototype.rollDamageDice = function() {
+  if (this._weapon === null) {
+    return (new rll.Dice('1d2')).roll();
+  }
+  return this._weapon.damage();
+};
+
+rll.ItemList.prototype.has = function(item) {
+  return this._items.has(item);
 };
 
 rll.ItemList.prototype.add = function(newItem) {
@@ -182,10 +200,13 @@ rll.ItemList.prototype.add = function(newItem) {
 
 rll.ItemList.prototype.draw = function(display) {
   var backgroundColor;
+  var item;
   for (var y=0; y<this._items.length; y++) {
     backgroundColor = this._cursor === y ? '#080' : '#000';
-    display.write(new rll.Point(0, y),
-        this._items[y].name(), '#fff', backgroundColor);
+    item = this._items[y];
+    var name = item.name();
+    if (item === this._weapon) name += '[装備]';
+    display.write(new rll.Point(0, y), name, '#fff', backgroundColor);
   }
 };
 
@@ -208,7 +229,9 @@ rll.ItemList.prototype.prevCursor = function() {
 };
 
 rll.ItemList.prototype.useSelectedItem = function(game) {
-  this._items[this._cursor].use(game);
+  var item = this._items[this._cursor];
+  item.use(game);
+  if (item.isWeapon()) return;
   this._items.splice(this._cursor, 1);
   this._adjustCursor();
 };
@@ -249,6 +272,10 @@ rll.Player.prototype.drawItemList = function(display) {
 
 rll.Player.prototype.hasItem = function() {
   return this._items.isEmpty() === false;
+};
+
+rll.Player.prototype.equip = function(item) {
+  this._items.equip(item);
 };
 
 rll.Player.prototype.selectNextItem = function() {
@@ -302,6 +329,10 @@ rll.Player.prototype.drawStatusLine = function(display, point) {
   line += ' exp:' + this._exp;
   display.clearLine(point.y());
   display.write(point, line);
+};
+
+rll.Player.prototype.attackDamage = function() {
+  return this._items.rollDamageDice();
 };
 
 rll.Player.AutoHeal = function(actor) {

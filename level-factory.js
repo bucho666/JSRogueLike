@@ -70,12 +70,17 @@ game.LevelFactory.prototype.putMonster = function(room) {
 };
 
 game.LevelFactory.prototype.putTreasure = function(room) {
-  if (rll.random(1, 6) === 1) {
-    var potion = game.potion.CureLightWounds;
-    this._stage.putItem(potion, room.insidePointAtRandom());
-  } else {
-    var diceNum = (Math.floor(this._stage.floor() / 5) + 1) * 6;
-    this._stage.putItem(new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100)),
-    room.insidePointAtRandom());
+  var treasure;
+  switch(rll.random(1, 7)) {
+    case 1:
+      treasure = game.potion.CureLightWounds;
+      break;
+    case 2:
+      treasure = game.weapon.list.choiceAtRandom();
+      break;
+    default:
+      var diceNum = (Math.floor(this._stage.floor() / 5) + 1) * 6;
+      treasure = new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100));
   }
+  this._stage.putItem(treasure, room.insidePointAtRandom());
 };

@@ -40,8 +40,11 @@ inherit(game.Dungeon, game.Scene);
 
 game.Dungeon.prototype.initialize = function() {
   this.newLevel();
+  var weapon = game.weapon.dagger;
+  this._player.getItem(weapon);
   this._player.getItem(game.potion.CureLightWounds);
   this._player.getItem(game.potion.CureLightWounds);
+  this._player.equip(weapon);
   this.draw();
 };
 

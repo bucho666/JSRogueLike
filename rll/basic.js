@@ -6,36 +6,12 @@ var inherit = function(child, parent) {
   child.prototype.constructer = child;
 };
 
-var rll = rll || {};
-
-rll.key = {
-  RETURN: 13, ESCAPE: 27, SPACE: 32,
-  LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40,
-  A: 65, B: 66, C: 67,
-  D: 68, E: 69, F: 70,
-  G: 71, H: 72, I: 73,
-  J: 74, K: 75, L: 76,
-  M: 77, N: 78, O: 79,
-  P: 80, Q: 81, R: 82,
-  S: 83, T: 84, U: 85,
-  V: 86, W: 87, X: 88,
-  Y: 89, Z: 90,
-  NUMPAD0: 96,
-  NUMPAD1: 97,  NUMPAD2: 98, NUMPAD3: 99,
-  NUMPAD4: 100, NUMPAD5: 101, NUMPAD6: 102,
-  NUMPAD7: 103, NUMPAD8: 104, NUMPAD9: 105,
-  MULTIPLY: 106, ADD: 107, SEPARATOR: 108,
-  SUBTRACT: 109, DECIMAL: 110, DIVIDE: 111,
-  PERIOD: 190
-};
-
-rll.random = function(min, max) {
-  return min + Math.floor(Math.random() * (max - min + 1));
-};
-
-rll.cointoss = function() {
-  return rll.random(0, 1) === 1;
-};
+Object.defineProperty(Object.prototype, 'inherit', { value: function(parent) {
+  var F = function(){};
+  F.prototype = parent.prototype;
+  this.prototype = new F();
+  this.prototype.constructer = this;
+}});
 
 Object.defineProperty(Array.prototype, 'choiceAtRandom', { value: function() {
   var index = rll.random(0, this.length - 1);
@@ -102,6 +78,43 @@ Object.defineProperty(Array.prototype, 'isEmpty', {
   value: function() {
   return this.length === 0;
 }});
+
+Object.defineProperty(Array.prototype, 'has', {
+  value: function(item) {
+  return this.indexOf(item) >= 0;
+}});
+
+var rll = rll || {};
+
+rll.key = {
+  RETURN: 13, ESCAPE: 27, SPACE: 32,
+  LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40,
+  A: 65, B: 66, C: 67,
+  D: 68, E: 69, F: 70,
+  G: 71, H: 72, I: 73,
+  J: 74, K: 75, L: 76,
+  M: 77, N: 78, O: 79,
+  P: 80, Q: 81, R: 82,
+  S: 83, T: 84, U: 85,
+  V: 86, W: 87, X: 88,
+  Y: 89, Z: 90,
+  NUMPAD0: 96,
+  NUMPAD1: 97,  NUMPAD2: 98, NUMPAD3: 99,
+  NUMPAD4: 100, NUMPAD5: 101, NUMPAD6: 102,
+  NUMPAD7: 103, NUMPAD8: 104, NUMPAD9: 105,
+  MULTIPLY: 106, ADD: 107, SEPARATOR: 108,
+  SUBTRACT: 109, DECIMAL: 110, DIVIDE: 111,
+  PERIOD: 190
+};
+
+rll.random = function(min, max) {
+  return min + Math.floor(Math.random() * (max - min + 1));
+};
+
+rll.cointoss = function() {
+  return rll.random(0, 1) === 1;
+};
+
 
 rll.Point = function(x, y) {
   this._x = x;
@@ -398,6 +411,7 @@ rll.Array2D.prototype.forEach = function(f) {
 };
 
 rll.Dice = function(dice) {
+  this._string = dice;
   var result = /(\d+)d(\d+)([+-])(\d+)/.exec(dice);
   if (result === null) result = /(\d+)d(\d+)/.exec(dice);
   if (result === null) throw 'Dice: invalid arguments: ' + dice;
@@ -407,6 +421,10 @@ rll.Dice = function(dice) {
   if (result.length !== 5) return;
   this._adjust = parseInt(result[4]);
   if (result[3] === '-') this._adjust *= -1;
+};
+
+rll.Dice.prototype.toString = function() {
+  return this._string;
 };
 
 rll.Dice.prototype.roll = function() {

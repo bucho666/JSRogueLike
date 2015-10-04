@@ -12,6 +12,3 @@ game.CureLightWounds.prototype.apply = function() {
   this._player.heal(point);
   this._game.message(point+'ポイント回復した!');
 };
-
-game.potion = {};
-game.potion.CureLightWounds = new rll.Potion('軽傷治癒の水薬', game.CureLightWounds, '#66f');
