@@ -222,6 +222,13 @@ rll.ChooseList.prototype.currentItem = function() {
   return this._items[this._cursor];
 };
 
+rll.ChooseList.prototype.removeCurrentItem = function() {
+  var item = this._items[this._cursor];
+  this._items.splice(this._cursor, 1);
+  this._adjustCursor();
+  return item;
+};
+
 rll.ItemList = function(limit) {
   rll.ChooseList.call(this, limit);
   this._weapon = null;
@@ -253,11 +260,18 @@ rll.ItemList.prototype.name = function(index) {
 };
 
 rll.ItemList.prototype.useSelectedItem = function(game) {
-  var item = this._items[this._cursor];
+  var item = this.currentItem();
   item.use(game);
   if (item.isWeapon()) return;
-  this._items.splice(this._cursor, 1);
-  this._adjustCursor();
+  this.removeCurrentItem();
+};
+
+rll.ItemList.prototype.removeCurrentItem = function() {
+  var item = rll.ChooseList.prototype.removeCurrentItem.call(this);
+  if (item === this._weapon) {
+    this._weapon = null;
+  }
+  return item;
 };
 
 rll.Player = function(character, name) {
@@ -304,6 +318,10 @@ rll.Player.prototype.selectPrevItem = function() {
 
 rll.Player.prototype.selectedItem = function() {
   return this._items.currentItem();
+};
+
+rll.Player.prototype.removeSelectedItem = function() {
+  return this._items.removeCurrentItem();
 };
 
 rll.Player.prototype.level = function() {

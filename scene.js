@@ -354,11 +354,27 @@ game.Equip.prototype.execute = function() {
 
 game.Drop = function(thisGame) {
   this._game = thisGame;
+  this._player = thisGame.player();
+  this._stage = thisGame.stage();
+};
+
+game.Drop.prototype.name = function() {
+  return '捨てる';
 };
 
 game.Drop.prototype.execute = function() {
+  var item = this._player.removeSelectedItem();
+  var point = this._dropPoint();
+  this._stage.putItem(item, point);
+  this._game.message(item.name() + 'を捨てた。');
+  this._game.nextTurn();
 };
 
-game.Drop.prototype.name= function() {
-  return '捨てる';
+game.Drop.prototype._dropPoint = function() {
+  return this._player.point();
+  // TODO ActorにaroundPointメソッドを追加
+  // playerPointをリストに追加
+  // アイテムが無い場所でフィルタ
+  // フィルタの結果、空ならplayerPointを返す
+  // フィルタがあるなら先頭の要素を返す
 };
