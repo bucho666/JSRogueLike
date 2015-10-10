@@ -71,20 +71,21 @@ game.LevelFactory.prototype.putMonster = function(room) {
 
 game.LevelFactory.prototype.putTreasure = function(room) {
   var treasure;
+  var itemLevel= this._stage.floor() / 2;
   switch(rll.random(1, 18)) {
     case 1:
       treasure = game.potion.CureLightWounds;
       break;
     case 2:
     case 3:
-      treasure = game.weapon.list.choiceAtRandom().copy();
+      treasure = game.Weapon.table.getAtRandom(itemLevel);
       break;
     case 4:
     case 5:
-      treasure = game.armor.list.choiceAtRandom().copy();
+      treasure = game.Armor.table.getAtRandom(itemLevel);
       break;
     case 6:
-      treasure = game.shield.list.choiceAtRandom().copy();
+      treasure = game.Shield.table.getAtRandom(itemLevel);
       break;
     default:
       var diceNum = (Math.floor(this._stage.floor() / 5) + 1) * 6;
