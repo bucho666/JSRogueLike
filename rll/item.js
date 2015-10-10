@@ -20,6 +20,14 @@ rll.Item.prototype.isWeapon = function() {
   return false;
 };
 
+rll.Item.prototype.isArmor = function() {
+  return false;
+};
+
+rll.Item.prototype.isShield = function() {
+  return false;
+};
+
 rll.Money = function(value) {
   rll.Item.call(this, rll.Money.character, '銀貨');
   this._value = value;
@@ -55,7 +63,7 @@ rll.Weapon = function(name, damage) {
 };
 rll.Weapon.inherit(rll.Item);
 
-rll.Weapon.character = new rll.Character('/', '#fff');
+rll.Weapon.character = new rll.Character('(', '#fff');
 
 rll.Weapon.prototype.isWeapon = function() {
   return true;
@@ -68,3 +76,36 @@ rll.Weapon.prototype.damage = function() {
 rll.Weapon.prototype.name = function() {
   return this._name + '(' + this._damageDice + ')';
 };
+
+rll.Armor = function(name, armorClass) {
+  rll.Item.call(this, rll.Armor.character, name);
+  this._armorClass = armorClass;
+};
+rll.Armor.inherit(rll.Item);
+
+rll.Armor.character = new rll.Character(']', '#fff');
+
+rll.Armor.prototype.isArmor = function() {
+  return true;
+};
+
+rll.Armor.prototype.armorClass = function() {
+  return this._armorClass;
+};
+
+rll.Armor.prototype.name = function() {
+  return this._name + '[' + this._armorClass + ']';
+};
+
+rll.Shield = function(name, armorClass) {
+  rll.Armor.call(this, name, armorClass);
+  this._character = rll.Shield.character;
+};
+rll.Shield.inherit(rll.Armor);
+
+rll.Shield.character = new rll.Character('[', '#888');
+
+rll.Shield.prototype.isShield = function() {
+  return true;
+};
+
