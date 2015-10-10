@@ -100,6 +100,8 @@ game.Dungeon.prototype.handleEvent = function(e) {
       this._autoPickup();
       this._game.nextTurn();
     }
+  } else if (key === rll.key.G) {
+    this.pickupItem();
   } else if (key === rll.key.I) {
     if (this._player.hasItem()) {
       (new game.ChooseItem(this._game)).execute();
@@ -156,10 +158,17 @@ game.Dungeon.prototype._autoPickup = function() {
   if (item.isMoney()) {
     return this._pickupMoney(item);
   }
+  this.message(item.name() + 'がある。');
+  this._stage.putItem(item, this._player.point());
+  return true;
+};
+
+game.Dungeon.prototype.pickupItem = function() {
+  var item = this._stage.pickupItem(this._player.point());
   if (this._player.itemIsFull()) {
-    this.message(item.name() + 'があるが、これ以上持てない。');
+    this.message(item.name() + 'これ以上持てない。');
     this._stage.putItem(item, this._player.point());
-    return true;
+    return false;
   }
   this.message(item.name()+'を手に入れた。');
   this._player.getItem(item);
