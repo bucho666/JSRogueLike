@@ -58,11 +58,14 @@ game.LevelFactory.prototype.makeRoom = function(room) {
 };
 
 game.LevelFactory.prototype.putMonster = function(room) {
-  var max = 1 + parseInt(this._stage.floor() / 3);
-  var monsterNum = rll.random(1, max);
-  var monsterList = new game.MonsterList(1+Math.floor(this._stage.floor() / 6));
-  for (var i=0; i<monsterNum; i++) {
+  var level = 1 + parseInt(this._stage.floor() / 6),
+    monsterNum = rll.random(1, level),
+    monsterList = new game.MonsterList(level),
+    i = 0;
+  while (true) {
     var m = monsterList.getAtRandom();
+    i += m.level();
+    if (i > monsterNum) break;
     m.setPoint(room.insidePointAtRandom());
     m.setAction(new game.AI(this._game));
     this._stage.addActor(m);
@@ -71,7 +74,7 @@ game.LevelFactory.prototype.putMonster = function(room) {
 
 game.LevelFactory.prototype.putTreasure = function(room) {
   var treasure;
-  var itemLevel= this._stage.floor() / 2;
+  var itemLevel = this._stage.floor() / 2;
   switch(rll.random(1, 18)) {
     case 1:
       treasure = game.potion.CureLightWounds;
@@ -84,11 +87,8 @@ game.LevelFactory.prototype.putTreasure = function(room) {
     case 5:
       treasure = game.Armor.table.getAtRandom(itemLevel);
       break;
-    case 6:
-      treasure = game.Shield.table.getAtRandom(itemLevel);
-      break;
     default:
-      var diceNum = (Math.floor(this._stage.floor() / 5) + 1) * 6;
+      var diceNum = (Math.floor(this._stage.floor() / 2) + 1) * 6;
       treasure = new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100));
   }
   this._stage.putItem(treasure, room.insidePointAtRandom());

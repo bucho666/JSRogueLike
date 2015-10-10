@@ -152,6 +152,8 @@ rll.Monster.prototype.toHit = function() {
   return this._hitDice.number();
 };
 
+rll.Monster.prototype.level = rll.Monster.prototype.toHit;
+
 rll.Monster.prototype.expBaseTable = [5, 10, 20, 25, 75, 175, 275];
 rll.Monster.prototype.expAdjustTable = [0, 5, 5, 25, 50, 50];
 rll.Monster.prototype.exp = function() {
