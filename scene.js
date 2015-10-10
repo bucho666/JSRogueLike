@@ -53,11 +53,14 @@ game.Dungeon.inherit(game.Scene);
 
 game.Dungeon.prototype.initialize = function() {
   this.newLevel();
-  var weapon = game.weapon.dagger;
+  var weapon = game.Weapon.table.getAtRandom(0);
+  var armor = game.Armor.table.getAtRandom(0);
   this._player.getItem(weapon);
+  this._player.getItem(armor);
   this._player.getItem(game.potion.CureLightWounds);
   this._player.getItem(game.potion.CureLightWounds);
   this._player.equip(weapon);
+  this._player.equip(armor);
   this.draw();
 };
 
@@ -154,7 +157,7 @@ game.Dungeon.prototype._autoPickup = function() {
     return this._pickupMoney(item);
   }
   if (this._player.itemIsFull()) {
-    this.message('これ以上持てない!');
+    this.message(item.name() + 'があるが、これ以上持てない。');
     this._stage.putItem(item, this._player.point());
     return true;
   }
@@ -283,7 +286,7 @@ game.ChooseItemAction.prototype.initialize = function() {
   if (item.isPotion()) {
     this._actionList.add(new game.Quaff(this._game));
   }
-  if (item.isWeapon()) {
+  if (item.isWeapon() || item.isArmor()) {
     this._actionList.add(new game.Equip(this._game));
   }
   this._actionList.add(new game.Drop(this._game));

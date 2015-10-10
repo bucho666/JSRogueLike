@@ -179,12 +179,18 @@ rll.Humanoid.prototype.openableDoor = function() {
 rll.ItemList = function(limit) {
   rll.ChooseList.call(this, limit);
   this._weapon = null;
+  this._armor = null;
+  this._shield = null;
 };
 rll.ItemList.inherit(rll.ChooseList);
 
 rll.ItemList.prototype.equip = function(item) {
   if (item.isWeapon()) {
     this._weapon = item;
+  } else if (item.isShield()) {
+    this._shield = item;
+  } else if (item.isArmor()) {
+    this._armor = item;
   }
 };
 
@@ -195,6 +201,17 @@ rll.ItemList.prototype.rollDamageDice = function() {
   return this._weapon.damage();
 };
 
+rll.ItemList.prototype.armorClass = function() {
+  var armorClass = 9;
+  if (this._armor) {
+    armorClass += this._armor.armorClass();
+  }
+  if (this._shield) {
+    armorClass += this._shield.armorClass();
+  }
+  return armorClass;
+};
+
 rll.ItemList.prototype.has = function(item) {
   return this._items.has(item);
 };
@@ -202,14 +219,18 @@ rll.ItemList.prototype.has = function(item) {
 rll.ItemList.prototype.name = function(index) {
   var item = this._items[index],
       name = item.name();
-  if (item === this._weapon) name += '[装備]';
+  if (item === this._weapon ||
+      item === this._armor  ||
+      item === this._shield) {
+    name += '[装備]';
+  }
   return name;
 };
 
 rll.ItemList.prototype.useSelectedItem = function(game) {
   var item = this.currentItem();
   item.use(game);
-  if (item.isWeapon()) return;
+  if (item.isPotion() === false) return;
   this.removeCurrentItem();
 };
 
@@ -225,7 +246,6 @@ rll.Player = function(character, name) {
   rll.Actor.call(this, character, name);
   this._level = 1;
   this._exp = new rll.PercenteageState(2000, 0);
-  this._armorClass = 6;
   this._items = new rll.ItemList(8);
   this.setAction(new rll.Player.AutoHeal(this));
 };
@@ -311,6 +331,7 @@ rll.Player.prototype.levelUp = function() {
 rll.Player.prototype.drawStatusLine = function(display, point) {
   var line = 'hp:' + this._hp;
   line += ' LV:' + this._level;
+  line += ' AC:' + this.armorClass();
   line += ' exp:' + this._exp;
   display.clearLine(point.y());
   display.write(point, line);
@@ -318,6 +339,10 @@ rll.Player.prototype.drawStatusLine = function(display, point) {
 
 rll.Player.prototype.attackDamage = function() {
   return this._items.rollDamageDice();
+};
+
+rll.Player.prototype.armorClass = function() {
+  return this._items.armorClass();
 };
 
 rll.Player.AutoHeal = function(actor) {
