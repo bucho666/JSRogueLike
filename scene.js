@@ -189,6 +189,11 @@ game.Dungeon.prototype._pickupMoney = function(money) {
 game.Dungeon.prototype.runPlayer = function(direction) {
   if (direction.equal(rll.Direction.HERE)) return true;
   var runner = new rll.Runner(this._player, direction, this._stage);
+  if (runner.inFrontDoor()) {
+    this.movePlayer(direction);
+    this._game.nextTurn();
+    return true;
+  }
   while (true) {
     if (runner.inFrontDoor()) break;
     if (this._sight.inMonster(this._stage, this._player)) break;
