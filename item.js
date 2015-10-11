@@ -6,6 +6,10 @@ game.Potion.table = new rll.Table();
 game.Potion.table.setTable(0, [new rll.Potion('軽傷治癒の水薬', game.CureLightWounds, '#66f')]);
 game.Potion.table.setTable(4, [new rll.Potion('重傷治癒の水薬', game.CureSeriousWounds, '#f66')]);
 
+game.Rod = {};
+game.Rod.table = new rll.Table();
+game.Rod.table.setTable(0, [new rll.Rod('マジックミサイルの魔法棒', game.MagicMissile, '#0f0')]);
+
 game.equipItem = function(game) {
   var player = game.player();
   player.equip(this);

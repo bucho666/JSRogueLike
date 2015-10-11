@@ -28,6 +28,10 @@ rll.Item.prototype.isShield = function() {
   return false;
 };
 
+rll.Item.prototype.isRod = function() {
+  return false;
+};
+
 rll.Money = function(value) {
   rll.Item.call(this, rll.Money.character, '銀貨');
   this._value = value;
@@ -43,18 +47,32 @@ rll.Money.prototype.isMoney = function() {
   return true;
 };
 
-rll.Potion = function(name, magic, color) {
-  rll.Item.call(this, new rll.Character('!', color), name);
+rll.MagicItem = function(name, magic, character) {
+  rll.Item.call(this, character, name);
   this._magic = magic;
 };
-rll.Potion.inherit(rll.Item);
+rll.MagicItem.inherit(rll.Item);
+
+rll.MagicItem.prototype.use = function(game) {
+  (new this._magic(game)).apply();
+};
+
+rll.Potion = function(name, magic, color) {
+  rll.MagicItem.call(this, name, magic, new rll.Character('!', color), name);
+};
+rll.Potion.inherit(rll.MagicItem);
 
 rll.Potion.prototype.isPotion = function() {
   return true;
 };
 
-rll.Potion.prototype.use = function(game) {
-  (new this._magic(game)).apply();
+rll.Rod = function(name, magic, color) {
+  rll.MagicItem.call(this, name, magic, new rll.Character('-', color), name);
+};
+rll.Rod.inherit(rll.MagicItem);
+
+rll.Rod.prototype.isRod = function() {
+  return true;
 };
 
 rll.Weapon = function(name, damage) {

@@ -56,6 +56,7 @@ game.Dungeon.prototype.initialize = function() {
   var weapon = game.Weapon.table.choiceAtRandom(0);
   var armor = game.Armor.table.choiceAtRandom(0);
   var potion = game.Potion.table.choiceAtRandom(0);
+  this._player.getItem(game.Rod.table.choiceAtRandom(0)); // TODO DEBUG
   this._player.getItem(weapon);
   this._player.getItem(armor);
   this._player.getItem(potion);
@@ -301,6 +302,9 @@ game.ChooseItemAction.prototype.initialize = function() {
   if (item.isPotion()) {
     this._actionList.add(new game.Quaff(this._game));
   }
+  if (item.isRod()) {
+    this._actionList.add(new game.Zap(this._game));
+  }
   if (item.isWeapon() || item.isArmor()) {
     this._actionList.add(new game.Equip(this._game));
   }
@@ -331,77 +335,4 @@ game.ChooseItemAction.prototype.handleEvent = function(e) {
     return;
   }
   this.draw();
-};
-
-game.ItemActionList = function() {
-  rll.ChooseList.call(this, 8);
-};
-game.ItemActionList.inherit(rll.ChooseList);
-
-game.ItemActionList.prototype.execute = function() {
-  this._items[this._cursor].execute();
-};
-
-game.Quaff = function(thisGame) {
-  this._game = thisGame;
-  this._player = thisGame.player();
-};
-
-game.Quaff.prototype.name = function() {
-  return '飲む';
-};
-
-game.Quaff.prototype.execute = function() {
-  this._player.useItem(this._game);
-  this._game.nextTurn();
-};
-
-game.Equip = function(thisGame) {
-  this._game = thisGame;
-  this._player = thisGame.player();
-};
-
-game.Equip.prototype.name = function() {
-  return '装備';
-};
-
-game.Equip.prototype.execute = function() {
-  this._player.useItem(this._game);
-  this._game.nextTurn();
-};
-
-game.Drop = function(thisGame) {
-  this._game = thisGame;
-  this._player = thisGame.player();
-  this._stage = thisGame.stage();
-};
-
-game.Drop.prototype.name = function() {
-  return '捨てる';
-};
-
-game.Drop.prototype.execute = function() {
-  var point = this._dropPoint(),
-      item;
-  if (point === null) {
-    this._game.message('捨てる場所が無い。');
-    return;
-  }
-  item = this._player.removeSelectedItem();
-  this._stage.putItem(item, point);
-  this._game.message(item.name() + 'を捨てた。');
-  this._game.nextTurn();
-};
-
-game.Drop.prototype._dropPoint = function() {
-  var here = this._player.point();
-  if (this._stage.item(here) === undefined) return here;
-  var points = this._player.aroundPoints();
-  points = points.filter(function(p) {
-    if (this.walkableAt(p) === false) return false;
-    if (this.item(p)) return false;
-    return true;
-  }, this._stage);
-  if (points.isEmpty()) return null;
-  return points[0];
 };
