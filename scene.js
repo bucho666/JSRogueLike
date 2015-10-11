@@ -165,6 +165,7 @@ game.Dungeon.prototype._autoPickup = function() {
 
 game.Dungeon.prototype.pickupItem = function() {
   var item = this._stage.pickupItem(this._player.point());
+  if (item === undefined) return false;
   if (this._player.itemIsFull()) {
     this.message(item.name() + 'これ以上持てない。');
     this._stage.putItem(item, this._player.point());
