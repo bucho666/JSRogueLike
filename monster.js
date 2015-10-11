@@ -82,3 +82,12 @@ game.Monster.table.setTable(5, [
       armorClass:5
     })
   ]);
+game.Monster.table.setTable(7, [
+    new game.Monster({
+      type      : rll.Humanoid,
+      name      :'ミノタウロス',
+      glyph     :'M',   color:'#f80',
+      hitDice   :'6d8', damage:'2d6+2',
+      armorClass:5
+    })
+  ]);
