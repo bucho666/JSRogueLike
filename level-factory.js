@@ -76,14 +76,15 @@ game.LevelFactory.prototype.putTreasure = function(room) {
   var itemLevel = this._stage.floor() / 2;
   switch(rll.random(1, 18)) {
     case 1:
-      treasure = game.potion.CureLightWounds;
-      break;
     case 2:
+      treasure = game.Potion.table.choiceAtRandom(itemLevel);
+      break;
     case 3:
+    case 4:
       treasure = game.Weapon.table.choiceAtRandom(itemLevel).copy();
       break;
-    case 4:
     case 5:
+    case 6:
       treasure = game.Armor.table.choiceAtRandom(itemLevel).copy();
       break;
     default:

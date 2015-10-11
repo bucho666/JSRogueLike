@@ -1,8 +1,10 @@
 /* global rll*/
 var game = game || {};
 
-game.potion = {};
-game.potion.CureLightWounds = new rll.Potion('軽傷治癒の水薬', game.CureLightWounds, '#66f');
+game.Potion = {};
+game.Potion.table = new rll.Table();
+game.Potion.table.setTable(0, [new rll.Potion('軽傷治癒の水薬', game.CureLightWounds, '#66f')]);
+game.Potion.table.setTable(4, [new rll.Potion('重傷治癒の水薬', game.CureSeriousWounds, '#f66')]);
 
 game.equipItem = function(game) {
   var player = game.player();

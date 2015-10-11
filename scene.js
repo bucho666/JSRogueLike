@@ -55,10 +55,11 @@ game.Dungeon.prototype.initialize = function() {
   this.newLevel();
   var weapon = game.Weapon.table.choiceAtRandom(0);
   var armor = game.Armor.table.choiceAtRandom(0);
+  var potion = game.Potion.table.choiceAtRandom(0);
   this._player.getItem(weapon);
   this._player.getItem(armor);
-  this._player.getItem(game.potion.CureLightWounds);
-  this._player.getItem(game.potion.CureLightWounds);
+  this._player.getItem(potion);
+  this._player.getItem(potion);
   this._player.equip(weapon);
   this._player.equip(armor);
   this.draw();
@@ -242,8 +243,7 @@ game.More = function(messages, display) {
 };
 game.More.inherit(game.Scene);
 
-game.More.prototype.handleEvent = function(e) {
-  if (e.keyCode != rll.key.SPACE) return;
+game.More.prototype.handleEvent = function() {
   this._messages.draw(this._display);
   if (this._messages.isEmpty()) {
     this.back();

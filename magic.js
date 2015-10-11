@@ -12,3 +12,10 @@ game.CureLightWounds.prototype.apply = function() {
   this._player.heal(point);
   this._game.message(point+'ポイント回復した!');
 };
+
+game.CureSeriousWounds = function(thisGame) {
+  game.CureLightWounds.call(this, thisGame);
+};
+game.CureSeriousWounds.inherit(game.CureLightWounds);
+
+game.CureSeriousWounds.prototype.dice = new rll.Dice('2d8+1');
