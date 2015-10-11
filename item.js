@@ -1,23 +1,6 @@
 /* global rll*/
 var game = game || {};
 
-game.ItemTable = function() {
-  this._items = {};
-};
-
-game.ItemTable.prototype.setTable = function(level, items) {
-  this._items[level] = items;
-};
-
-game.ItemTable.prototype.getAtRandom = function(level) {
-  var list = [];
-  for (var l = 0; l <= level; l++) {
-    if (this._items[l] === undefined) continue;
-    list = list.concat(this._items[l]);
-  }
-  return list.choiceAtRandom().copy();
-};
-
 game.potion = {};
 game.potion.CureLightWounds = new rll.Potion('軽傷治癒の水薬', game.CureLightWounds, '#66f');
 
@@ -56,7 +39,7 @@ game.Shield.prototype.copy = function() {
   return new game.Shield(this._name, this._armorClass);
 };
 
-game.Weapon.table = new game.ItemTable();
+game.Weapon.table = new rll.Table();
 game.Weapon.table.setTable(0, [
     new game.Weapon('ダガー', '2d2'),
     new game.Weapon('クラブ', '1d5')]);
@@ -73,7 +56,7 @@ game.Weapon.table.setTable(4, [
   new game.Weapon('バトルアックス', '1d9'),
   new game.Weapon('トゥハンドソード', '2d5')]);
 
-game.Armor.table = new game.ItemTable();
+game.Armor.table = new rll.Table();
 game.Armor.table.setTable(0, [
     new game.Armor('レザーアーマー', -2),
     new game.Shield('シールド', -1)]);

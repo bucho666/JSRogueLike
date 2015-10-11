@@ -58,12 +58,11 @@ game.LevelFactory.prototype.makeRoom = function(room) {
 };
 
 game.LevelFactory.prototype.putMonster = function(room) {
-  var level = 1 + parseInt(this._stage.floor() / 6),
+  var level = parseInt(this._stage.floor() / 2),
     monsterNum = rll.random(1, level),
-    monsterList = new game.MonsterList(level),
     i = 0;
   while (true) {
-    var m = monsterList.getAtRandom();
+    var m = game.Monster.table.choiceAtRandom(level).create();
     i += m.level();
     if (i > monsterNum) break;
     m.setPoint(room.insidePointAtRandom());
@@ -81,11 +80,11 @@ game.LevelFactory.prototype.putTreasure = function(room) {
       break;
     case 2:
     case 3:
-      treasure = game.Weapon.table.getAtRandom(itemLevel);
+      treasure = game.Weapon.table.choiceAtRandom(itemLevel).copy();
       break;
     case 4:
     case 5:
-      treasure = game.Armor.table.getAtRandom(itemLevel);
+      treasure = game.Armor.table.choiceAtRandom(itemLevel).copy();
       break;
     default:
       var diceNum = (Math.floor(this._stage.floor() / 2) + 1) * 6;

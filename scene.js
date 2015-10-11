@@ -53,8 +53,8 @@ game.Dungeon.inherit(game.Scene);
 
 game.Dungeon.prototype.initialize = function() {
   this.newLevel();
-  var weapon = game.Weapon.table.getAtRandom(0);
-  var armor = game.Armor.table.getAtRandom(0);
+  var weapon = game.Weapon.table.choiceAtRandom(0);
+  var armor = game.Armor.table.choiceAtRandom(0);
   this._player.getItem(weapon);
   this._player.getItem(armor);
   this._player.getItem(game.potion.CureLightWounds);
