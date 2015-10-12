@@ -47,15 +47,20 @@ rll.Sight.prototype.scan = function(point, stage) {
   }
 };
 
-rll.Sight.prototype.inMonster = function(stage, me) {
-  var i, point, actor;
+rll.Sight.prototype.existsMonster = function(stage, me) {
+  return this.monsterPoints(stage, me).isEmpty() === false;
+};
+
+rll.Sight.prototype.monsterPoints = function(stage, me) {
+  var points = [], i, point, actor;
   for (i=0; i<this._sight.length; i++) {
     point = this._sight[i];
     actor = stage.findActor(point);
     if (actor === null) continue;
-    if (actor != me) return true;
+    if (actor == me) continue;
+    points.push(point);
   }
-  return false;
+  return points;
 };
 
 rll.View = function(radius) {

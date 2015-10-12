@@ -268,8 +268,13 @@ rll.Player.prototype.drawSight = function(display, stage) {
 };
 
 rll.Player.prototype.isVisibleMonster = function(stage) {
-  return this._sight.inMonster(stage, this);
+  return this._sight.existsMonster(stage, this);
 };
+
+rll.Player.prototype.visibleMonsterPoints = function(stage) {
+  return this._sight.monsterPoints(stage, this);
+};
+
 
 rll.Player.prototype.getItem = function(item) {
   this._items.add(item);

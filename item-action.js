@@ -16,9 +16,7 @@ game.UseItem = function(name, thisGame) {
   this._name = name;
 };
 
-game.UseItem.prototype.name = function() {
-  return this._name;
-};
+game.UseItem.prototype.name = function() { return this._name; };
 
 game.UseItem.prototype.execute = function() {
   this._player.useItem(this._game);
@@ -32,9 +30,7 @@ game.Drop = function(name, thisGame) {
   this._name = name;
 };
 
-game.Drop.prototype.name = function() {
-  return this._name;
-};
+game.Drop.prototype.name = function() { return this._name; };
 
 game.Drop.prototype.execute = function() {
   var point = this._dropPoint(),
@@ -61,3 +57,15 @@ game.Drop.prototype._dropPoint = function() {
   if (points.isEmpty()) return null;
   return points[0];
 };
+
+game.ChangeScene = function(name, newScene) {
+  this._newScene = newScene;
+  this._name = name;
+};
+
+game.ChangeScene.prototype.name = function() { return this._name;};
+game.ChangeScene.prototype.execute = function() {
+  this._newScene.execute();
+};
+
+

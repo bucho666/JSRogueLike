@@ -5,9 +5,9 @@ game.Scene = function() {
   this._beforeScene = game.keyEvent.current();
 };
 
-game.Scene.prototype.execute = function() {
-  this.initialize();
+game.Scene.prototype.execute = function() { // TODO rename to begin
   game.keyEvent.set(this);
+  this.initialize();
 };
 
 game.Scene.prototype.initialize = function() {
@@ -302,7 +302,7 @@ game.ChooseItemAction.prototype.initialize = function() {
     this._actionList.add(new game.UseItem('飲む', this._game));
   }
   if (item.isRod()) {
-    this._actionList.add(new game.UseItem('振る', this._game));
+    this._actionList.add(new game.ChangeScene('振る', new game.ChooseTargetAction(this._game)));
   }
   if (item.isWeapon() || item.isArmor()) {
     this._actionList.add(new game.UseItem('装備', this._game));
@@ -322,6 +322,7 @@ game.ChooseItemAction.prototype.handleEvent = function(e) {
     return;
   } else if (key == rll.key.RETURN) {
     this._actionList.execute();
+    if (game.keyEvent.current() !== this) return;
     this.backToRoot();
     return;
   } else if (key in game.DIRECITON_KEY === false) {
@@ -336,15 +337,32 @@ game.ChooseItemAction.prototype.handleEvent = function(e) {
   this.draw();
 };
 
-// TODO ChooseTagetScene
 game.ChooseTargetAction = function(thisGame) {
   game.Scene.call(this);
   this._game = thisGame;
   this._player = thisGame.player();
+  this._monsterPoints = [];
+  this._display = thisGame.display();
 };
 game.ChooseTargetAction.inherit(game.Scene);
 
 game.ChooseTargetAction.prototype.initialize = function() {
-  // TODO
+  this._monsterPoints = this._player.visibleMonsterPoints(this._game.stage());
+  if (this._monsterPoints.isEmpty()) {
+    this._game.message('相手がいない。');
+    this.backToRoot();
+    return;
+  }
+  this.draw();
 };
 
+game.ChooseTargetAction.prototype.draw = function() {
+  var i;
+  for (i=0; i < this._monsterPoints.length; i++) {
+    this._display.write(this._monsterPoints[i], 'X', '#f00');
+  }
+};
+
+game.ChooseTargetAction.prototype.handleEvent = function() {
+  this.draw();
+};
