@@ -43,7 +43,6 @@ game.Scene.prototype.handleEvent = function(e) {
 game.Dungeon = function(thisGame) {
   game.Scene.call(this);
   this._game = thisGame;
-  this._sight = new rll.Sight(new rll.Size(80, 21));
   this._player = thisGame.player();
   this._stage = thisGame.stage();
   this._display = thisGame.display();
@@ -67,14 +66,14 @@ game.Dungeon.prototype.initialize = function() {
 };
 
 game.Dungeon.prototype.newLevel = function() {
-  this._sight.clear();
+  this._player.clearSight();
   this._game.newLevel();
   this._stage = this._game.stage();
 };
 
 game.Dungeon.prototype.draw = function() {
-  this._sight.scan(this._player.point(), this._stage);
-  this._sight.draw(this._display, this._stage);
+  this._player.scanSight(this._stage);
+  this._player.drawSight(this._display, this._stage);
   this._player.drawStatusLine(this._display, new rll.Point(0, 21));
   this._display.write(new rll.Point(71, 21), 'floor:'+this._stage.floor());
   this._messages.draw(this._display);
@@ -198,10 +197,10 @@ game.Dungeon.prototype.runPlayer = function(direction) {
   }
   while (true) {
     if (runner.inFrontDoor()) break;
-    if (this._sight.inMonster(this._stage, this._player)) break;
+    if (this._player.isVisibleMonster(this._stage)) break;
     if (this.movePlayer(direction) === false) break;
     this._game.nextTurn();
-    this._sight.scan(this._player.point(), this._stage);
+    this._player.scanSight(this._stage);
     if (this._autoPickup()) break;
     if (this._stage.downableAt(this._player.point())) break;
     if (runner.mustStop()) break;
@@ -300,15 +299,15 @@ game.ChooseItemAction.inherit(game.Scene);
 game.ChooseItemAction.prototype.initialize = function() {
   var item = this._player.selectedItem();
   if (item.isPotion()) {
-    this._actionList.add(new game.Quaff(this._game));
+    this._actionList.add(new game.UseItem('飲む', this._game));
   }
   if (item.isRod()) {
-    this._actionList.add(new game.Zap(this._game));
+    this._actionList.add(new game.UseItem('振る', this._game));
   }
   if (item.isWeapon() || item.isArmor()) {
-    this._actionList.add(new game.Equip(this._game));
+    this._actionList.add(new game.UseItem('装備', this._game));
   }
-  this._actionList.add(new game.Drop(this._game));
+  this._actionList.add(new game.Drop('捨てる', this._game));
   this.draw();
 };
 
@@ -336,3 +335,16 @@ game.ChooseItemAction.prototype.handleEvent = function(e) {
   }
   this.draw();
 };
+
+// TODO ChooseTagetScene
+game.ChooseTargetAction = function(thisGame) {
+  game.Scene.call(this);
+  this._game = thisGame;
+  this._player = thisGame.player();
+};
+game.ChooseTargetAction.inherit(game.Scene);
+
+game.ChooseTargetAction.prototype.initialize = function() {
+  // TODO
+};
+

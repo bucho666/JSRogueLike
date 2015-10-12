@@ -10,10 +10,10 @@ game.ItemActionList.prototype.execute = function() {
   this._items[this._cursor].execute();
 };
 
-game.UseItem = function(thisGame) {
+game.UseItem = function(name, thisGame) {
   this._game = thisGame;
   this._player = thisGame.player();
-  this._name = '使う';
+  this._name = name;
 };
 
 game.UseItem.prototype.name = function() {
@@ -25,32 +25,15 @@ game.UseItem.prototype.execute = function() {
   this._game.nextTurn();
 };
 
-game.Quaff = function(thisGame) {
-  game.UseItem.call(this, thisGame);
-  this._name = '飲む';
-};
-game.Quaff.inherit(game.UseItem);
-
-game.Equip = function(thisGame) {
-  game.UseItem.call(this, thisGame);
-  this._name = '装備';
-};
-game.Equip.inherit(game.UseItem);
-
-game.Zap = function(thisGame) {
-  game.UseItem.call(this, thisGame);
-  this._name = '振る';
-};
-game.Zap.inherit(game.UseItem);
-
-game.Drop = function(thisGame) {
+game.Drop = function(name, thisGame) {
   this._game = thisGame;
   this._player = thisGame.player();
   this._stage = thisGame.stage();
+  this._name = name;
 };
 
 game.Drop.prototype.name = function() {
-  return '捨てる';
+  return this._name;
 };
 
 game.Drop.prototype.execute = function() {

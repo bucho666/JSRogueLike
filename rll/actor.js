@@ -247,11 +247,29 @@ rll.ItemList.prototype.removeCurrentItem = function() {
 rll.Player = function(character, name) {
   rll.Actor.call(this, character, name);
   this._level = 1;
+  this._sight = new rll.Sight(new rll.Size(80, 21));
   this._exp = new rll.PercenteageState(2000, 0);
   this._items = new rll.ItemList(8);
   this.setAction(new rll.Player.AutoHeal(this));
 };
 rll.Player.inherit(rll.Actor);
+
+
+rll.Player.prototype.clearSight = function() {
+  this._sight.clear();
+};
+
+rll.Player.prototype.scanSight = function(stage) {
+  this._sight.scan(this._point, stage);
+};
+
+rll.Player.prototype.drawSight = function(display, stage) {
+  this._sight.draw(display, stage);
+};
+
+rll.Player.prototype.isVisibleMonster = function(stage) {
+  return this._sight.inMonster(stage, this);
+};
 
 rll.Player.prototype.getItem = function(item) {
   this._items.add(item);
