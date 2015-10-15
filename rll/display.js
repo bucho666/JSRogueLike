@@ -61,6 +61,10 @@ rll.Character.prototype.dark = function() {
   return this._dark;
 };
 
+rll.Character.prototype.changeBackColor = function(newColor) {
+  return new rll.Character(this._glyph, this._color, newColor);
+};
+
 rll.CharacterCode = function(code) {
   this._code = code;
 };
@@ -84,6 +88,10 @@ rll.Grid.setSize = function(newSize) {
 
 rll.Grid.prototype.equal = function(other) {
   return this._character.equal(other._character);
+};
+
+rll.Grid.prototype.changeBackColor = function(newColor) {
+  return new rll.Grid(this._point, this._character.changeBackColor(newColor));
 };
 
 rll.Grid.prototype.draw = function(context) {
@@ -168,6 +176,14 @@ rll.Display.prototype.writeCharacter = function(point, character) {
     return;
   }
   this._dirty[point] = grid;
+};
+
+rll.Display.prototype.changeBackColor = function(point, newColor) {
+  if (point in this._dirty === false) {
+    this._dirty[point] = new rll.Grid(point, new rll.Character(' ', '#000', newColor));
+  } else {
+    this._dirty[point] = this._dirty[point].changeBackColor(newColor);
+  }
 };
 
 rll.Display.prototype.flush = function() {

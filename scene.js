@@ -3,6 +3,7 @@ var game = game || {};
 
 game.Scene = function() {
   this._beforeScene = game.keyEvent.current();
+  this._rootScene = this.rootScene();
 };
 
 game.Scene.prototype.execute = function() { // TODO rename to begin
@@ -26,12 +27,16 @@ game.Scene.prototype.back = function() {
 };
 
 game.Scene.prototype.backToRoot = function() {
+  game.keyEvent.set(this._rootScene);
+  this._rootScene.draw();
+};
+
+game.Scene.prototype.rootScene = function() {
   var rootScene = this;
   while (rootScene._beforeScene) {
     rootScene = rootScene._beforeScene;
   }
-  game.keyEvent.set(rootScene);
-  rootScene.draw();
+  return rootScene;
 };
 
 game.Scene.prototype.handleEvent = function(e) {
@@ -312,6 +317,7 @@ game.ChooseItemAction.prototype.initialize = function() {
 };
 
 game.ChooseItemAction.prototype.draw = function() {
+  this._rootScene.draw();
   this._actionList.draw(this._game.display());
 };
 
@@ -339,30 +345,69 @@ game.ChooseItemAction.prototype.handleEvent = function(e) {
 
 game.ChooseTargetAction = function(thisGame) {
   game.Scene.call(this);
-  this._game = thisGame;
   this._player = thisGame.player();
-  this._monsterPoints = [];
   this._display = thisGame.display();
+  this._stage = thisGame.stage();
+  this._messages = thisGame.messages();
+  this._monsterPoints = [];
+  this._targetPoint = null;
 };
 game.ChooseTargetAction.inherit(game.Scene);
 
 game.ChooseTargetAction.prototype.initialize = function() {
-  this._monsterPoints = this._player.visibleMonsterPoints(this._game.stage());
+  this._monsterPoints = this._player.visibleMonsterPoints(this._stage);
   if (this._monsterPoints.isEmpty()) {
-    this._game.message('相手がいない。');
+    this._messages.add('相手がいない。');
     this.backToRoot();
     return;
   }
+  this._monsterPoints.sort(function(a, b) {
+    var abs = Math.abs;
+    a = this.distance(a);
+    b = this.distance(b);
+    return (abs(a.x()) + abs(a.y())) - (abs(b.x()) + abs(b.y()));
+  }.bind(this._player.point()));
+  this._targetPoint = this._monsterPoints[0];
   this.draw();
 };
 
 game.ChooseTargetAction.prototype.draw = function() {
-  var i;
-  for (i=0; i < this._monsterPoints.length; i++) {
-    this._display.write(this._monsterPoints[i], 'X', '#f00');
+  this._rootScene.draw();
+  var actor = this._stage.findActor(this._targetPoint);
+  var line = this._targetPoint.lineTo(this._player.point());
+  line.pop();
+  for (var i=0; i < line.length; i++) {
+    this._display.changeBackColor(line[i], '#00f');
   }
+  this._display.changeBackColor(this._targetPoint, '#800');
+  if (actor) this._messages.add(actor.name());
+  this._messages.draw(this._display);
 };
 
-game.ChooseTargetAction.prototype.handleEvent = function() {
+game.ChooseTargetAction.prototype.handleEvent = function(e) {
+  var key = e.keyCode, sortFunction;
+  if (key == rll.key.ESCAPE) {
+    this.back();
+    return;
+  }
+  if (key in game.DIRECITON_KEY === false) return;
+  switch(game.DIRECITON_KEY[key]) {
+    case rll.Direction.E:
+      sortFunction = function(a, b) { return a.x() - b.x(); };
+      break;
+    case rll.Direction.W:
+      sortFunction = function(a, b) { return b.x() - a.x(); };
+      break;
+    case rll.Direction.S:
+      sortFunction = function(a, b) { return a.y() - b.y(); };
+      break;
+    case rll.Direction.N:
+      sortFunction = function(a, b) { return b.y() - a.y(); };
+      break;
+  }
+  this._monsterPoints.sort(sortFunction);
+  this._targetPoint = this._monsterPoints.next(this._targetPoint);
+  // TODO 魔法の引数にuserとtargetを指定する。
+  // TODO Enterで対象ポイントにeffect適用
   this.draw();
 };

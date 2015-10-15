@@ -21,17 +21,25 @@ Object.defineProperty(Array.prototype, 'find', { value: function(f) {
 Object.defineProperty(Array.prototype, 'next',
   { value: function(element, count) {
   count = count || 1;
-  var i = this.indexOf(element);
-  i = (i + count) % this.length;
-  return this[i];
+  return this[this.nextIndex(this.indexOf(element))];
 }});
 
 Object.defineProperty(Array.prototype, 'prev',
   { value: function(element, count) {
   count = count || 1;
-  var i = this.indexOf(element);
-  i = (i + this.length - count) % this.length;
-  return this[i];
+  return this[this.prevIndex(this.indexOf(element))];
+}});
+
+Object.defineProperty(Array.prototype, 'nextIndex',
+  { value: function(index, count) {
+  count = count || 1;
+  return (index + count) % this.length;
+}});
+
+Object.defineProperty(Array.prototype, 'prevIndex',
+  { value: function(index, count) {
+  count = count || 1;
+  return (index + this.length - count) % this.length;
 }});
 
 Object.defineProperty(Array.prototype, 'remove', {

@@ -52,13 +52,15 @@ rll.Sight.prototype.existsMonster = function(stage, me) {
 };
 
 rll.Sight.prototype.monsterPoints = function(stage, me) {
-  var points = [], i, point, actor;
+  var points = [], i, point, actor, actors = [];
   for (i=0; i<this._sight.length; i++) {
     point = this._sight[i];
     actor = stage.findActor(point);
-    if (actor === null) continue;
     if (actor == me) continue;
+    if (actor === null) continue;
+    if (actors.indexOf(actor) !== -1) continue;
     points.push(point);
+    actors.push(actor);
   }
   return points;
 };
