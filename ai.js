@@ -33,6 +33,7 @@ game.AI.prototype.attackToPlayer = function(actor, player) {
     return;
   }
   var damage = attack.damage();
+  player.damage(damage);
   this._game.message(actor.name() + 'の攻撃が命中' + damage + 'のダメージ!!');
   if (player.isDead() === false) return;
   this._game.message('あなたは死んだ…');
