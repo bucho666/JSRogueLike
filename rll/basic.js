@@ -21,13 +21,13 @@ Object.defineProperty(Array.prototype, 'find', { value: function(f) {
 Object.defineProperty(Array.prototype, 'next',
   { value: function(element, count) {
   count = count || 1;
-  return this[this.nextIndex(this.indexOf(element))];
+  return this[this.nextIndex(this.indexOf(element), count)];
 }});
 
 Object.defineProperty(Array.prototype, 'prev',
   { value: function(element, count) {
   count = count || 1;
-  return this[this.prevIndex(this.indexOf(element))];
+  return this[this.prevIndex(this.indexOf(element), count)];
 }});
 
 Object.defineProperty(Array.prototype, 'nextIndex',
