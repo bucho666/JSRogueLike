@@ -9,7 +9,7 @@ rll.ChooseList.prototype.draw = function(display) {
   var backgroundColor;
   for (var y=0; y<this._items.length; y++) {
     backgroundColor = this._cursor === y ? '#080' : '#000';
-    display.write(new rll.Point(1, y), this.name(y), '#fff', backgroundColor);
+    display.write(new rll.Point(0, y), this.name(y), '#fff', backgroundColor);
   }
 };
 

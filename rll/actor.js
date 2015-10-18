@@ -186,6 +186,15 @@ rll.ItemList = function(limit) {
 };
 rll.ItemList.inherit(rll.ChooseList);
 
+rll.ItemList.prototype.draw = function(display) {
+  var backgroundColor;
+  for (var y=0; y<this._items.length; y++) {
+    backgroundColor = this._cursor === y ? '#080' : '#000';
+    this._items[y].draw(display, new rll.Point(0, y));
+    display.write(new rll.Point(1, y), this.name(y), '#fff', backgroundColor);
+  }
+};
+
 rll.ItemList.prototype.equip = function(item) {
   if (item.isWeapon()) {
     this._weapon = item;
