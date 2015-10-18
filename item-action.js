@@ -65,7 +65,7 @@ game.ChangeScene = function(name, newScene) {
 
 game.ChangeScene.prototype.name = function() { return this._name;};
 game.ChangeScene.prototype.execute = function() {
-  this._newScene.execute();
+  this._newScene.start();
 };
 
 

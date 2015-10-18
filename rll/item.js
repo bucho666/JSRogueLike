@@ -8,6 +8,10 @@ rll.Item.prototype.use = function(game) {
   game.message(this.name() + 'を使った。');
 };
 
+rll.Item.prototype.copy = function() {
+  return this;
+};
+
 rll.Item.prototype.isMoney = function() {
   return false;
 };
@@ -53,8 +57,8 @@ rll.MagicItem = function(name, magic, character) {
 };
 rll.MagicItem.inherit(rll.Item);
 
-rll.MagicItem.prototype.use = function(game) {
-  (new this._magic(game)).apply();
+rll.MagicItem.prototype.use = function(game, target, user) {
+  (new this._magic(game)).apply(target, user);
 };
 
 rll.Potion = function(name, magic, color) {
@@ -68,8 +72,22 @@ rll.Potion.prototype.isPotion = function() {
 
 rll.Rod = function(name, magic, color) {
   rll.MagicItem.call(this, name, magic, new rll.Character('-', color), name);
+  this._charge = 0;
 };
 rll.Rod.inherit(rll.MagicItem);
+
+rll.Rod.prototype.use = function(game, target, user) {
+  (new this._magic(game)).apply(target, user);
+  this._charge -= 1;
+};
+
+rll.Rod.prototype.charge = function(value) {
+  this._charge += value;
+};
+
+rll.Rod.prototype.isEmpty = function() {
+  return this._charge <= 0;
+};
 
 rll.Rod.prototype.isRod = function() {
   return true;

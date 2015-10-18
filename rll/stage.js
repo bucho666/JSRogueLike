@@ -10,6 +10,7 @@ rll.TerrainMap = function(size) {
 };
 
 rll.TerrainMap.prototype.get = function(point) {
+  if (this._terrain[point.y()] === undefined) return undefined;
   return this._terrain[point.y()][point.x()];
 };
 
@@ -22,11 +23,13 @@ rll.TerrainMap.prototype.draw = function(display, point) {
 };
 
 rll.TerrainMap.prototype.walkableAt = function(point) {
-  return this._terrain[point.y()][point.x()].walkable();
+  var t = this.get(point);
+  if (t === undefined) return false;
+  return t.walkable();
 };
 
 rll.TerrainMap.prototype.downableAt = function(point) {
-  return this._terrain[point.y()][point.x()] == rll.Terrain.DOWN_STAIRS;
+  return this.get(point) === rll.Terrain.DOWN_STAIRS;
 };
 
 rll.TerrainMap.prototype.randomWalkablePoint = function() {
@@ -39,11 +42,11 @@ rll.TerrainMap.prototype.randomWalkablePoint = function() {
 };
 
 rll.TerrainMap.prototype.closedDoorAt = function(point) {
-  return this._terrain[point.y()][point.x()] === rll.Terrain.CLOSED_DOOR;
+  return this.get(point) === rll.Terrain.CLOSED_DOOR;
 };
 
 rll.TerrainMap.prototype.openedDoorAt = function(point) {
-  return this._terrain[point.y()][point.x()] === rll.Terrain.OPENED_DOOR;
+  return this.get(point) === rll.Terrain.OPENED_DOOR;
 };
 
 rll.TerrainMap.prototype.closeDoorAt = function(point) {

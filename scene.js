@@ -6,7 +6,7 @@ game.Scene = function() {
   this._rootScene = this.rootScene();
 };
 
-game.Scene.prototype.execute = function() { // TODO rename to begin
+game.Scene.prototype.start = function() {
   game.keyEvent.set(this);
   this.initialize();
 };
@@ -60,9 +60,9 @@ game.Dungeon.prototype.initialize = function() {
   var weapon = game.Weapon.table.choiceAtRandom(0);
   var armor = game.Armor.table.choiceAtRandom(0);
   var potion = game.Potion.table.choiceAtRandom(0);
-  this._player.getItem(game.Rod.table.choiceAtRandom(0)); // TODO DEBUG
   this._player.getItem(weapon);
   this._player.getItem(armor);
+  this._player.getItem(game.Rod.table.choiceAtRandom(3).copy());
   this._player.getItem(potion);
   this._player.getItem(potion);
   this._player.equip(weapon);
@@ -83,7 +83,7 @@ game.Dungeon.prototype.draw = function() {
   this._display.write(new rll.Point(71, 21), 'floor:'+this._stage.floor());
   this._messages.draw(this._display);
   if (this._messages.isEmpty() === false) {
-    (new game.More(this._messages, this._display)).execute();
+    (new game.More(this._messages, this._display)).start();
   }
 };
 
@@ -110,7 +110,7 @@ game.Dungeon.prototype.handleEvent = function(e) {
     this.pickupItem();
   } else if (key === rll.key.I) {
     if (this._player.hasItem()) {
-      (new game.ChooseItem(this._game)).execute();
+      (new game.ChooseItem(this._game)).start();
       return;
     }
     this.message('何も持っていない。');
@@ -128,7 +128,7 @@ game.Dungeon.prototype.handleEvent = function(e) {
           this.message('その方向に閉められるドアは無い。');
         }
         this.draw();
-      }.bind(this))).execute();
+      }.bind(this))).start();
   } else if (key === rll.key.A && onShift) {
     this._player.levelUp();
   } else if (key === rll.key.Z && onShift) {
@@ -183,12 +183,8 @@ game.Dungeon.prototype.pickupItem = function() {
 };
 
 game.Dungeon.prototype._pickupMoney = function(money) {
-  this._player.getMoney(money);
   this.message('銀貨を'+money.value()+'枚手に入れた。');
-  if ( this._player.expIsFull()) {
-    this._player.levelUp();
-    this.message('レベル' + this._player.level() + 'へようこそ!!');
-  }
+  this._game.getExp(money.value());
   return true;
 };
 
@@ -219,12 +215,7 @@ game.Dungeon.prototype.attackToMonster = function(monster) {
     this.message(monster.name() + 'にかわされた!');
     return;
   }
-  var damage = attack.damage();
-  this.message(monster.name() + 'に命中' + damage + 'のダメージ!');
-  if (monster.isDead() === false) return;
-  this.message(monster.name() + 'をたおした!!');
-  this._player.getExp(monster.exp());
-  this._stage.removeActor(monster);
+  this._game.damageToMonster(monster, attack.damage());
 };
 
 game.chooseDirection = function(action) {
@@ -279,7 +270,7 @@ game.ChooseItem.prototype.handleEvent = function(e) {
     return;
   } else if (key == rll.key.RETURN) {
     this.drawBeforeScene();
-    (new game.ChooseItemAction(this._game)).execute();
+    (new game.ChooseItemAction(this._game)).start();
     return;
   } else if (key in game.DIRECITON_KEY === false) {
     return;
@@ -307,7 +298,7 @@ game.ChooseItemAction.prototype.initialize = function() {
     this._actionList.add(new game.UseItem('飲む', this._game));
   }
   if (item.isRod()) {
-    this._actionList.add(new game.ChangeScene('振る', new game.ChooseTargetAction(this._game)));
+    this._actionList.add(new game.ChangeScene('振る', new game.ChooseTargetAction(this._game, item)));
   }
   if (item.isWeapon() || item.isArmor()) {
     this._actionList.add(new game.UseItem('装備', this._game));
@@ -343,14 +334,16 @@ game.ChooseItemAction.prototype.handleEvent = function(e) {
   this.draw();
 };
 
-game.ChooseTargetAction = function(thisGame) {
+game.ChooseTargetAction = function(thisGame, effect) {
   game.Scene.call(this);
+  this._game = thisGame;
   this._player = thisGame.player();
   this._display = thisGame.display();
   this._stage = thisGame.stage();
   this._messages = thisGame.messages();
   this._monsterPoints = [];
   this._targetPoint = null;
+  this._effect = effect;
 };
 game.ChooseTargetAction.inherit(game.Scene);
 
@@ -374,11 +367,6 @@ game.ChooseTargetAction.prototype.initialize = function() {
 game.ChooseTargetAction.prototype.draw = function() {
   this._rootScene.draw();
   var actor = this._stage.findActor(this._targetPoint);
-  var line = this._targetPoint.lineTo(this._player.point());
-  line.pop();
-  for (var i=0; i < line.length; i++) {
-    this._display.changeBackColor(line[i], '#00f');
-  }
   this._display.changeBackColor(this._targetPoint, '#800');
   if (actor) this._messages.add(actor.name());
   this._messages.draw(this._display);
@@ -388,6 +376,12 @@ game.ChooseTargetAction.prototype.handleEvent = function(e) {
   var key = e.keyCode, sortFunction;
   if (key == rll.key.ESCAPE) {
     this.back();
+    return;
+  }
+  if (key === rll.key.RETURN) {
+    this._effect.use(this._game, this._stage.findActor(this._targetPoint), this._player);
+    this._game.nextTurn();
+    this.backToRoot();
     return;
   }
   if (key in game.DIRECITON_KEY === false) return;
@@ -407,7 +401,5 @@ game.ChooseTargetAction.prototype.handleEvent = function(e) {
   }
   this._monsterPoints.sort(sortFunction);
   this._targetPoint = this._monsterPoints.next(this._targetPoint);
-  // TODO 魔法の引数にuserとtargetを指定する。
-  // TODO Enterで対象ポイントにeffect適用
   this.draw();
 };

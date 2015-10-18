@@ -3,12 +3,11 @@ var game = game || {};
 
 game.CureLightWounds = function(thisGame) {
   this._game = thisGame;
-  this._player = thisGame.player();
 };
 game.CureLightWounds.prototype.dice = new rll.Dice('1d6+1');
-game.CureLightWounds.prototype.apply = function() {
+game.CureLightWounds.prototype.apply = function(target) {
   var point = this.dice.roll();
-  this._player.heal(point);
+  target.heal(point);
   this._game.message(point+'ポイント回復した!');
 };
 
@@ -20,7 +19,10 @@ game.CureSeriousWounds.prototype.dice = new rll.Dice('2d8+1');
 
 game.MagicMissile = function(thisGame) {
   this._game = thisGame;
+  this._player = thisGame.player();
+  this._stage = thisGame.stage();
 };
-game.MagicMissile.prototype.apply = function() {
-  this._game.message('magic misslie!');
+game.MagicMissile.prototype.dice = new rll.Dice('1d6+1');
+game.MagicMissile.prototype.apply = function(target) {
+  this._game.damageToMonster(target, this.dice.roll());
 };

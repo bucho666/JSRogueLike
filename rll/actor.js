@@ -229,9 +229,9 @@ rll.ItemList.prototype.name = function(index) {
   return name;
 };
 
-rll.ItemList.prototype.useSelectedItem = function(game) {
+rll.ItemList.prototype.useSelectedItem = function(game, user) {
   var item = this.currentItem();
-  item.use(game);
+  item.use(game, user);
   if (item.isPotion() === false) return;
   this.removeCurrentItem();
 };
@@ -275,13 +275,12 @@ rll.Player.prototype.visibleMonsterPoints = function(stage) {
   return this._sight.monsterPoints(stage, this);
 };
 
-
 rll.Player.prototype.getItem = function(item) {
   this._items.add(item);
 };
 
 rll.Player.prototype.useItem = function(game) {
-  this._items.useSelectedItem(game);
+  this._items.useSelectedItem(game, this);
 };
 
 rll.Player.prototype.itemIsFull = function() {
@@ -332,10 +331,6 @@ rll.Player.prototype.leftPoint = function(direction) {
 
 rll.Player.prototype.toHit = function() {
   return this._level + 3;
-};
-
-rll.Player.prototype.getMoney = function(money) {
-  this.getExp(money.value());
 };
 
 rll.Player.prototype.getExp = function(value) {

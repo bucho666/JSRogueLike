@@ -6,9 +6,23 @@ game.Potion.table = new rll.Table();
 game.Potion.table.setTable(0, [new rll.Potion('軽傷治癒の水薬', game.CureLightWounds, '#66f')]);
 game.Potion.table.setTable(4, [new rll.Potion('重傷治癒の水薬', game.CureSeriousWounds, '#f66')]);
 
-game.Rod = {};
+game.Rod = function(name, magic, color) {
+  rll.Rod.call(this, name, magic, color);
+  this.charge(this.chargeDice.roll());
+};
+game.Rod.inherit(rll.Rod);
+game.Rod.prototype.chargeDice = new rll.Dice('1d5+1');
 game.Rod.table = new rll.Table();
-game.Rod.table.setTable(0, [new rll.Rod('マジックミサイルの魔法棒', game.MagicMissile, '#0f0')]);
+game.Rod.table.setTable(3, [new game.Rod('マジックミサイルの魔法棒', game.MagicMissile, '#0f0')]);
+game.Rod.prototype.use = function(game, target, user) {
+  rll.Rod.prototype.use.call(this, game, target, user);
+  if (this.isEmpty() === false) return;
+  game.message(this.name() + 'の魔力が切れた。');
+  user.removeSelectedItem();
+};
+game.Rod.prototype.copy = function() {
+  return new game.Rod(this._name, this._magic, this._character.color());
+};
 
 game.equipItem = function(game) {
   var player = game.player();

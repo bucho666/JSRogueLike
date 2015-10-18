@@ -14,7 +14,5 @@ game.MeleeAttack.prototype.isHit = function() {
 };
 
 game.MeleeAttack.prototype.damage = function() {
-  var damagePoint = this._attaker.attackDamage();
-  this._defender.damage(damagePoint);
-  return damagePoint;
+  return this._attaker.attackDamage();
 };

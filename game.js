@@ -59,7 +59,7 @@ game.Game.prototype.message = function(message) {
 game.Game.prototype.run = function() {
   this._display.initialize();
   document.body.appendChild(this._display.getCanvas());
-  (new game.Dungeon(this)).execute();
+  (new game.Dungeon(this)).start();
 };
 
 game.Game.prototype.newLevel = function() {
@@ -68,6 +68,23 @@ game.Game.prototype.newLevel = function() {
 
 game.Game.prototype.nextTurn = function() {
   this._stage.actorsAction();
+};
+
+game.Game.prototype.damageToMonster = function(monster, damage) {
+  monster.damage(damage);
+  this.message(monster.name() + 'に命中' + damage + 'のダメージ!');
+  if (monster.isDead() === false) return;
+  this.message(monster.name() + 'をたおした!!');
+  this.getExp(monster.exp());
+  this._stage.removeActor(monster);
+};
+
+game.Game.prototype.getExp = function(exp) {
+  this._player.getExp(exp);
+  if (this._player.expIsFull()) {
+    this._player.levelUp();
+    this.message('レベル' + this._player.level() + 'へようこそ!!');
+  }
 };
 
 (function() {

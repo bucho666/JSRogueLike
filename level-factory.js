@@ -81,15 +81,19 @@ game.LevelFactory.prototype.putTreasure = function(room) {
       break;
     case 3:
     case 4:
-      treasure = game.Weapon.table.choiceAtRandom(itemLevel).copy();
+      treasure = game.Weapon.table.choiceAtRandom(itemLevel);
       break;
     case 5:
     case 6:
-      treasure = game.Armor.table.choiceAtRandom(itemLevel).copy();
+      treasure = game.Armor.table.choiceAtRandom(itemLevel);
+      break;
+    case 7:
+      treasure = game.Rod.table.choiceAtRandom(itemLevel);
       break;
     default:
       var diceNum = (Math.floor(this._stage.floor() / 2) + 1) * 6;
       treasure = new rll.Money(Math.floor((new rll.Dice('1d'+diceNum)).roll() * 100));
   }
-  this._stage.putItem(treasure, room.insidePointAtRandom());
+  if (treasure === undefined) return;
+  this._stage.putItem(treasure.copy(), room.insidePointAtRandom());
 };
