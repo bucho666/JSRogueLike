@@ -187,10 +187,14 @@ rll.ItemList = function(limit) {
 rll.ItemList.inherit(rll.ChooseList);
 
 rll.ItemList.prototype.draw = function(display) {
-  var backgroundColor;
+  var backgroundColor,
+      selectColor = '#080',
+      symbolPoint;
   for (var y=0; y<this._items.length; y++) {
-    backgroundColor = this._cursor === y ? '#080' : '#000';
-    this._items[y].draw(display, new rll.Point(0, y));
+    symbolPoint = new rll.Point(0, y);
+    this._items[y].draw(display, symbolPoint);
+    if (this._cursor === y) display.changeBackColor(symbolPoint, selectColor);
+    backgroundColor = this._cursor === y ? selectColor : '#000';
     display.write(new rll.Point(1, y), this.name(y), '#fff', backgroundColor);
   }
 };

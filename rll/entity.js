@@ -8,8 +8,8 @@ rll.Entity.prototype.name = function() {
   return this._name;
 };
 
-rll.Entity.prototype.draw = function(display, point) {
-  display.writeCharacter(point, this._character);
+rll.Entity.prototype.draw = function(display, point, backGroundColor) {
+  display.writeCharacter(point, this._character, backGroundColor);
 };
 
 rll.Entity.prototype.dark = function() {
