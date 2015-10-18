@@ -6,10 +6,12 @@ rll.ChooseList = function(limit) {
 };
 
 rll.ChooseList.prototype.draw = function(display) {
-  var backgroundColor;
+  var backgroundColor, item;
   for (var y=0; y<this._items.length; y++) {
     backgroundColor = this._cursor === y ? '#080' : '#000';
-    display.write(new rll.Point(0, y), this.name(y), '#fff', backgroundColor);
+    item = this._items[y];
+    item.draw(display, new rll.Point(0, y));
+    display.write(new rll.Point(1, y), item.name(y), '#fff', backgroundColor);
   }
 };
 
