@@ -362,12 +362,13 @@ rll.Player.prototype.levelUp = function() {
 };
 
 rll.Player.prototype.drawStatusLine = function(display, point) {
-  var line = 'hp:' + this._hp;
+  var line = 'hp:' + this._hp,
+      color = this._hp.current() / this._hp.max() <= 0.25 ? '#f00' : undefined;
   line += ' LV:' + this._level;
   line += ' AC:' + this.armorClass();
   line += ' exp:' + this._exp;
   display.clearLine(point.y());
-  display.write(point, line);
+  display.write(point, line, color);
 };
 
 rll.Player.prototype.attackDamage = function() {
