@@ -41,7 +41,7 @@ game.Monster.table.setTable(2, [
       armorClass:7
     }),
   ]);
-game.Monster.table.setTable(3, [
+game.Monster.table.setTable(2, [
     new game.Monster({
       type      : rll.Humanoid,
       name      :'オーク',
@@ -57,7 +57,7 @@ game.Monster.table.setTable(3, [
       armorClass:6
     })
   ]);
-game.Monster.table.setTable(4, [
+game.Monster.table.setTable(3, [
     new game.Monster({
       type      : rll.Monster,
       name      :'オオカミ',
@@ -66,7 +66,7 @@ game.Monster.table.setTable(4, [
       armorClass:5
     })
   ]);
-game.Monster.table.setTable(5, [
+game.Monster.table.setTable(4, [
     new game.Monster({
       type      : rll.Humanoid,
       name      :'ノール',
@@ -82,7 +82,7 @@ game.Monster.table.setTable(5, [
       armorClass:5
     })
   ]);
-game.Monster.table.setTable(7, [
+game.Monster.table.setTable(5, [
     new game.Monster({
       type      : rll.Humanoid,
       name      :'ミノタウロス',

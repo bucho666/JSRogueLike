@@ -46,9 +46,9 @@ game.LevelFactory.prototype.create = function(floor) {
 game.LevelFactory.prototype.makeRoom = function(room) {
   var dice = new rll.Dice('1d6');
   var roll = dice.roll();
-  if (roll === 3) {
+  if (roll === 2) {
     dice = new rll.Dice('1d3');
-  } else if (roll >= 4) {
+  } else if (roll >= 3) {
     this.putMonster(room);
     dice = new rll.Dice('1d2');
   }

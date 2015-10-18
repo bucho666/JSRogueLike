@@ -69,10 +69,10 @@ game.Weapon.table.setTable(1, [
 game.Weapon.table.setTable(2, [
   new game.Weapon('ハンドアックス', '1d7'),
   new game.Weapon('スピア', '1d6+1')]);
-game.Weapon.table.setTable(3, [
+game.Weapon.table.setTable(4, [
   new game.Weapon('ハンマー', '2d3-1'),
   new game.Weapon('ロングソード', '2d4')]);
-game.Weapon.table.setTable(4, [
+game.Weapon.table.setTable(6, [
   new game.Weapon('バトルアックス', '1d9'),
   new game.Weapon('トゥハンドソード', '2d5')]);
 
@@ -82,13 +82,13 @@ game.Armor.table.setTable(0, [
     new game.Shield('シールド', -1)]);
 game.Armor.table.setTable(1, [
     new game.Armor('レザーアーマー+1', -3)]);
-game.Armor.table.setTable(3, [
+game.Armor.table.setTable(4, [
     new game.Armor('チェインメイル', -4),
     new game.Armor('チェインメイル+1', -5)]);
-game.Armor.table.setTable(4, [
-    new game.Shield('シールド+1', -2)]);
 game.Armor.table.setTable(5, [
+    new game.Shield('シールド+1', -2)]);
+game.Armor.table.setTable(8, [
     new game.Armor('プレートメイル', -6),
     new game.Armor('プレートメイル+1', -7)]);
-game.Armor.table.setTable(6, [
+game.Armor.table.setTable(10, [
     new game.Shield('シールド+2', -3)]);
